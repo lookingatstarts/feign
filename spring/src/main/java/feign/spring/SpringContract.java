@@ -32,15 +32,19 @@ public class SpringContract extends DeclarativeContract {
   static final String CONTENT_TYPE = "Content-Type";
 
   public SpringContract() {
+    // 注册RequestMapping
     registerClassAnnotation(
         RequestMapping.class,
+        // data为MethodMetadata
         (requestMapping, data) -> {
+          // 映射url
           appendMappings(data, requestMapping.value());
-
-          if (requestMapping.method().length == 1)
+          if (requestMapping.method().length == 1){
             data.template().method(Request.HttpMethod.valueOf(requestMapping.method()[0].name()));
-
+          }
+          // Accept请求头
           handleProducesAnnotation(data, requestMapping.produces());
+          // Content-Type请求头
           handleConsumesAnnotation(data, requestMapping.consumes());
         });
 
@@ -48,10 +52,9 @@ public class SpringContract extends DeclarativeContract {
         RequestMapping.class,
         (requestMapping, data) -> {
           appendMappings(data, mapping(requestMapping.path(), requestMapping.value()));
-
-          if (requestMapping.method().length == 1)
+          if (requestMapping.method().length == 1){
             data.template().method(Request.HttpMethod.valueOf(requestMapping.method()[0].name()));
-
+          }
           handleProducesAnnotation(data, requestMapping.produces());
           handleConsumesAnnotation(data, requestMapping.consumes());
         });
@@ -106,6 +109,7 @@ public class SpringContract extends DeclarativeContract {
         (body, data) -> {
           handleProducesAnnotation(data, "application/json");
         });
+
     registerMethodAnnotation(
         ExceptionHandler.class,
         (ann, data) -> {
@@ -142,6 +146,7 @@ public class SpringContract extends DeclarativeContract {
     }
   }
 
+  // @PathVariable参数注解处理
   private DeclarativeContract.ParameterAnnotationProcessor<PathVariable>
       pathVariableParameterAnnotationProcessor() {
     return (parameterAnnotation, data, paramIndex) -> {
@@ -198,6 +203,7 @@ public class SpringContract extends DeclarativeContract {
     return !typeName.startsWith("class java.");
   }
 
+  // 映射url
   private void appendMappings(MethodMetadata data, String[] mappings) {
     for (int i = 0; i < mappings.length; i++) {
       String methodAnnotationValue = mappings[i];
@@ -207,14 +213,13 @@ public class SpringContract extends DeclarativeContract {
       if (data.template().url().endsWith("/") && methodAnnotationValue.startsWith("/")) {
         methodAnnotationValue = methodAnnotationValue.substring(1);
       }
-
       data.template().uri(data.template().url() + methodAnnotationValue);
     }
   }
 
   private void handleProducesAnnotation(MethodMetadata data, String... produces) {
     if (produces.length == 0) return;
-    data.template().removeHeader(ACCEPT); // remove any previous produces
+    data.template().removeHeader(ACCEPT);
     data.template().header(ACCEPT, produces[0]);
   }
 

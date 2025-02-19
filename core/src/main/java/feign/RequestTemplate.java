@@ -453,7 +453,6 @@ public final class RequestTemplate implements Serializable {
     if (UriUtils.isAbsolute(uri)) {
       throw new IllegalArgumentException("url values must be not be absolute.");
     }
-
     if (uri == null) {
       uri = "/";
     } else if ((!uri.isEmpty()
@@ -464,7 +463,6 @@ public final class RequestTemplate implements Serializable {
       /* if the start of the url is a literal, it must begin with a slash. */
       uri = "/" + uri;
     }
-
     int fragmentIndex = uri.indexOf('#');
     if (fragmentIndex > -1) {
       fragment = uri.substring(fragmentIndex);
@@ -478,7 +476,6 @@ public final class RequestTemplate implements Serializable {
     Matcher queryMatcher = QUERY_STRING_PATTERN.matcher(uri);
     if (queryMatcher.find()) {
       String queryString = uri.substring(queryMatcher.start() + 1);
-
       /* parse the query string */
       this.extractQueryTemplates(queryString, append);
 

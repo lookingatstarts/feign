@@ -24,15 +24,17 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
+ * Declarative声明式合约
  * {@link Contract} base implementation that works by declaring witch annotations should be
  * processed and how each annotation modifies {@link MethodMetadata}
  */
 public abstract class DeclarativeContract extends BaseContract {
-
+  // 类上注解处理器
   private final List<GuardedAnnotationProcessor> classAnnotationProcessors = new ArrayList<>();
+  // 方法上注解处理器
   private final List<GuardedAnnotationProcessor> methodAnnotationProcessors = new ArrayList<>();
-  private final Map<Class<Annotation>, DeclarativeContract.ParameterAnnotationProcessor<Annotation>>
-      parameterAnnotationProcessors = new HashMap<>();
+  // 参数上注解处理器
+  private final Map<Class<Annotation>, DeclarativeContract.ParameterAnnotationProcessor<Annotation>> parameterAnnotationProcessors = new HashMap<>();
 
   @Override
   public final List<MethodMetadata> parseAndValidateMetadata(Class<?> targetType) {
@@ -182,7 +184,7 @@ public abstract class DeclarativeContract extends BaseContract {
 
   /**
    * Called while method annotations are being processed
-   *
+   * 注册注解处理器
    * @param annotationType to be processed
    * @param processor function that defines the annotations modifies {@link MethodMetadata}
    */
@@ -215,6 +217,9 @@ public abstract class DeclarativeContract extends BaseContract {
         (Class) annotation, (DeclarativeContract.ParameterAnnotationProcessor) processor);
   }
 
+  /**
+   * 解析方法上的注解
+   */
   @FunctionalInterface
   public interface AnnotationProcessor<E extends Annotation> {
 
