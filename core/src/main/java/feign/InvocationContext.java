@@ -24,6 +24,9 @@ import feign.codec.ErrorDecoder;
 import java.io.IOException;
 import java.lang.reflect.Type;
 
+/**
+ * 调用上下文
+ */
 public class InvocationContext {
   private static final long MAX_RESPONSE_BUFFER_SIZE = 8192L;
   private final String configKey;
@@ -70,7 +73,6 @@ public class InvocationContext {
     if (returnType == Response.class) {
       return disconnectResponseBodyIfNeeded(response);
     }
-
     try {
       final boolean shouldDecodeResponseBody =
           (response.status() >= 200 && response.status() < 300)
@@ -79,7 +81,6 @@ public class InvocationContext {
       if (!shouldDecodeResponseBody) {
         throw decodeError(configKey, response);
       }
-
       if (isVoidType(returnType) && !decodeVoid) {
         ensureClosed(response.body());
         return null;
@@ -107,7 +108,6 @@ public class InvocationContext {
     if (!shouldDisconnectResponseBody) {
       return response;
     }
-
     try {
       final byte[] bodyData = Util.toByteArray(response.body().asInputStream());
       return response.toBuilder().body(bodyData).build();

@@ -62,7 +62,6 @@ import org.apache.http.util.EntityUtils;
  */
 public final class ApacheHttpClient implements Client {
   private static final String ACCEPT_HEADER_NAME = "Accept";
-
   private final HttpClient client;
 
   public ApacheHttpClient() {
@@ -88,28 +87,21 @@ public final class ApacheHttpClient implements Client {
   HttpUriRequest toHttpUriRequest(Request request, Request.Options options)
       throws URISyntaxException {
     RequestBuilder requestBuilder = RequestBuilder.create(request.httpMethod().name());
-
     // per request timeouts
     RequestConfig requestConfig =
-        (client instanceof Configurable
-                ? RequestConfig.copy(((Configurable) client).getConfig())
-                : RequestConfig.custom())
+        (client instanceof Configurable ? RequestConfig.copy(((Configurable) client).getConfig()) : RequestConfig.custom())
             .setConnectTimeout(options.connectTimeoutMillis())
             .setSocketTimeout(options.readTimeoutMillis())
             .setRedirectsEnabled(options.isFollowRedirects())
             .build();
     requestBuilder.setConfig(requestConfig);
-
     URI uri = new URIBuilder(request.url()).build();
-
     requestBuilder.setUri(uri.getScheme() + "://" + uri.getAuthority() + uri.getRawPath());
-
     // request query params
     List<NameValuePair> queryParams = URLEncodedUtils.parse(uri, requestBuilder.getCharset());
     for (NameValuePair queryParam : queryParams) {
       requestBuilder.addParameter(queryParam);
     }
-
     // request headers
     boolean hasAcceptHeader = false;
     for (Map.Entry<String, Collection<String>> headerEntry : request.headers().entrySet()) {

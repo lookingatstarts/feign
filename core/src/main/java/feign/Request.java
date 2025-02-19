@@ -275,6 +275,9 @@ public final class Request implements Serializable {
     return body.data;
   }
 
+  /**
+   * 是否为二进制数据
+   */
   public boolean isBinary() {
     return body.isBinary();
   }
@@ -326,11 +329,14 @@ public final class Request implements Serializable {
   /**
    * Controls the per-request settings currently required to be implemented by all {@link Client
    * clients}
+   * 可选参数
    */
   public static class Options {
 
+    // 连接时长
     private final long connectTimeout;
     private final TimeUnit connectTimeoutUnit;
+    // 超时时间
     private final long readTimeout;
     private final TimeUnit readTimeoutUnit;
     private final boolean followRedirects;
@@ -389,7 +395,7 @@ public final class Request implements Serializable {
      * @param connectTimeoutUnit with the TimeUnit for the timeout value.
      * @param readTimeout value.
      * @param readTimeoutUnit with the TimeUnit for the timeout value.
-     * @param followRedirects if the request should follow 3xx redirections.
+     * @param followRedirects if the request should follow 3xx redirections. 是否支持重定向
      */
     public Options(
         long connectTimeout,

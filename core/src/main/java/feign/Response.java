@@ -23,6 +23,10 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+/**
+ * 响应
+ */
+
 /** An immutable response to an http invocation which only returns string content. */
 public final class Response implements Closeable {
 
@@ -209,9 +213,7 @@ public final class Response implements Closeable {
    * Type</a>
    */
   public Charset charset() {
-
     Collection<String> contentTypeHeaders = headers().get("Content-Type");
-
     if (contentTypeHeaders != null) {
       for (String contentTypeHeader : contentTypeHeaders) {
         String[] contentTypeParmeters = contentTypeHeader.split(";");
@@ -224,7 +226,6 @@ public final class Response implements Closeable {
         }
       }
     }
-
     return Util.UTF_8;
   }
 
@@ -248,6 +249,9 @@ public final class Response implements Closeable {
     Util.ensureClosed(body);
   }
 
+  /**
+   * 响应体
+   */
   public interface Body extends Closeable {
 
     /**
@@ -280,7 +284,6 @@ public final class Response implements Closeable {
   }
 
   private static final class InputStreamBody implements Response.Body {
-
     private final InputStream inputStream;
     private final Integer length;
 

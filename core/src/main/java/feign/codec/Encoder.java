@@ -93,8 +93,7 @@ public interface Encoder {
       } else if (bodyType == byte[].class) {
         template.body((byte[]) object, null);
       } else if (object != null) {
-        throw new EncodeException(
-            format("%s is not a type supported by this encoder.", object.getClass()));
+        throw new EncodeException(format("%s is not a type supported by this encoder.", object.getClass()));
       }
     }
   }

@@ -20,6 +20,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Retention;
 
+// 被该注解标识的方法会被忽略掉
 /** Indicates that method will be ignored */
 @Retention(RUNTIME)
 @java.lang.annotation.Target({METHOD})

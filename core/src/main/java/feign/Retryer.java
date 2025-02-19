@@ -24,6 +24,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public interface Retryer extends Cloneable {
 
   /**
+   * propagate传播
    * if retry is permitted, return (possibly after sleeping). Otherwise, propagate the exception.
    */
   void continueOrPropagate(RetryableException e);
@@ -55,10 +56,10 @@ public interface Retryer extends Cloneable {
     }
 
     public void continueOrPropagate(RetryableException e) {
+      // 大于最大重试次数
       if (attempt++ >= maxAttempts) {
         throw e;
       }
-
       long interval;
       if (e.retryAfter() != null) {
         interval = e.retryAfter() - currentTimeMillis();

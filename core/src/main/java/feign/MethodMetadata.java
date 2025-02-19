@@ -26,7 +26,9 @@ import java.util.stream.Collectors;
 public final class MethodMetadata implements Serializable {
 
   private static final long serialVersionUID = 1L;
+  // 类名+方法名+参数列表生成的key
   private String configKey;
+  // 方法返回类型
   private transient Type returnType;
   private Integer urlIndex;
   private Integer bodyIndex;
@@ -45,7 +47,9 @@ public final class MethodMetadata implements Serializable {
   private BitSet parameterToIgnore = new BitSet();
   private boolean ignored;
   private boolean bodyRequired = true;
+  // 原始目标类
   private transient Class<?> targetType;
+  // 方法
   private transient Method method;
   private final transient List<String> warnings = new ArrayList<>();
 

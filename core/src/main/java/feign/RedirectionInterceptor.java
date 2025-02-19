@@ -20,6 +20,7 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 
 /**
+ * 重定向响应拦截器
  * An implementation of {@link ResponseInterceptor} the returns the value of the location header
  * when appropriate.
  */

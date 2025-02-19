@@ -44,11 +44,14 @@ public interface Contract {
 
   /**
    * Called to parse the methods in the class that are linked to HTTP requests.
-   *
+   * 从目标类提取出方法元数据
    * @param targetType {@link feign.Target#type() type} of the Feign interface.
    */
   List<MethodMetadata> parseAndValidateMetadata(Class<?> targetType);
 
+  /**
+   * base实现类
+   */
   abstract class BaseContract implements Contract {
 
     /**
@@ -66,6 +69,7 @@ public interface Contract {
           "Only single inheritance supported: %s",
           targetType.getSimpleName());
       final Map<String, MethodMetadata> result = new LinkedHashMap<String, MethodMetadata>();
+      // 返回获取所有公共方法
       for (final Method method : targetType.getMethods()) {
         if (method.getDeclaringClass() == Object.class
             || (method.getModifiers() & Modifier.STATIC) != 0
@@ -98,6 +102,7 @@ public interface Contract {
     }
 
     /** Called indirectly by {@link #parseAndValidateMetadata(Class)}. */
+    // 获取方法元数据
     protected MethodMetadata parseAndValidateMetadata(Class<?> targetType, Method method) {
       final MethodMetadata data = new MethodMetadata();
       data.targetType(targetType);
@@ -107,12 +112,11 @@ public interface Contract {
       if (AlwaysEncodeBodyContract.class.isAssignableFrom(this.getClass())) {
         data.alwaysEncodeBody(true);
       }
-
       if (targetType.getInterfaces().length == 1) {
         processAnnotationOnClass(data, targetType.getInterfaces()[0]);
       }
       processAnnotationOnClass(data, targetType);
-
+      // 处理方法参数
       for (final Annotation methodAnnotation : method.getAnnotations()) {
         processAnnotationOnMethod(data, methodAnnotation, method);
       }

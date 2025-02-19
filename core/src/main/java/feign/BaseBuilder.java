@@ -31,26 +31,28 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+// Builder用于创建Feign对象
 public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Cloneable {
 
   private final B thisB;
-
   protected final List<RequestInterceptor> requestInterceptors = new ArrayList<>();
   protected final List<ResponseInterceptor> responseInterceptors = new ArrayList<>();
   protected Logger.Level logLevel = Logger.Level.NONE;
   protected Contract contract = new Contract.Default();
   protected Retryer retryer = new Retryer.Default();
   protected Logger logger = new NoOpLogger();
+  // 编码
   protected Encoder encoder = new Encoder.Default();
+  // 解码
   protected Decoder decoder = new Decoder.Default();
   protected boolean closeAfterDecode = true;
   protected boolean decodeVoid = false;
   protected QueryMapEncoder queryMapEncoder = QueryMap.MapEncoder.FIELD.instance();
   protected ErrorDecoder errorDecoder = new ErrorDecoder.Default();
   protected Options options = new Options();
-  protected InvocationHandlerFactory invocationHandlerFactory =
-      new InvocationHandlerFactory.Default();
+  protected InvocationHandlerFactory invocationHandlerFactory = new InvocationHandlerFactory.Default();
   protected boolean dismiss404;
+  // 异常传播策略
   protected ExceptionPropagationPolicy propagationPolicy = NONE;
   protected List<Capability> capabilities = new ArrayList<>();
 
@@ -229,10 +231,8 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Clo
     if (capabilities.isEmpty()) {
       return thisB;
     }
-
     try {
       B clone = (B) thisB.clone();
-
       getFieldsToEnrich()
           .forEach(
               field -> {
@@ -296,7 +296,6 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Clo
             .reduce(ResponseInterceptor::andThen)
             .map(interceptor -> interceptor.apply(endOfChain))
             .orElse(endOfChain);
-
     return (ResponseInterceptor.Chain)
         Capability.enrich(executionChain, ResponseInterceptor.Chain.class, capabilities);
   }

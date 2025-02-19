@@ -25,12 +25,13 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Capabilities expose core feign artifacts to implementations so parts of core can be customized
+ * Capabilities expose(暴露) core feign artifacts to implementations so parts of core can be customized
  * around the time the client being built.
+ * 将一些基础组件暴露给实现，增强这些组件
  *
  * <p>For instance, capabilities take the {@link Client}, make changes to it and feed the modified
  * version back to feign.
- *
+ * Capability 性能
  * @see Metrics5Capability
  */
 public interface Capability {

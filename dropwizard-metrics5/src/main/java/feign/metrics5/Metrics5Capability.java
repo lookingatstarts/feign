@@ -42,6 +42,7 @@ public class Metrics5Capability implements Capability {
     this.metricSuppliers = metricSuppliers;
   }
 
+  // 增强
   @Override
   public Client enrich(Client client) {
     return new MeteredClient(client, metricRegistry, metricSuppliers);

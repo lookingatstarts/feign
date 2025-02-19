@@ -75,7 +75,6 @@ public class AnnotationErrorDecoder implements ErrorDecoder {
     }
 
     Map<String, MethodErrorHandler> generateErrorHandlerMapFromApi(Class<?> apiType) {
-
       ExceptionGenerator classLevelDefault =
           new ExceptionGenerator.Builder()
               .withResponseBodyDecoder(responseBodyDecoder)

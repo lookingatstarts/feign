@@ -109,7 +109,6 @@ public abstract class Feign {
 
     public Builder client(Client client) {
       this.client = client;
-
       return this;
     }
 
@@ -225,8 +224,8 @@ public abstract class Feign {
               propagationPolicy,
               new RequestTemplateFactoryResolver(encoder, queryMapEncoder),
               options);
-      return new ReflectiveFeign<>(
-          contract, methodHandlerFactory, invocationHandlerFactory, () -> null);
+      // 通过反射实现的feign
+      return new ReflectiveFeign<>(contract, methodHandlerFactory, invocationHandlerFactory, () -> null);
     }
   }
 

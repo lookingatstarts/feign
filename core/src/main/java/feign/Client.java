@@ -60,6 +60,7 @@ public interface Client {
    */
   Response execute(Request request, Options options) throws IOException;
 
+  // 默认实现使用HttpURLConnection
   class Default implements Client {
 
     private final SSLSocketFactory sslContextFactory;
@@ -113,14 +114,9 @@ public interface Client {
     Response convertResponse(HttpURLConnection connection, Request request) throws IOException {
       int status = connection.getResponseCode();
       String reason = connection.getResponseMessage();
-
       if (status < 0) {
-        throw new IOException(
-            format(
-                "Invalid status(%s) executing %s %s",
-                status, connection.getRequestMethod(), connection.getURL()));
+        throw new IOException(format("Invalid status(%s) executing %s %s", status, connection.getRequestMethod(), connection.getURL()));
       }
-
       Map<String, Collection<String>> headers = new TreeMap<>(CASE_INSENSITIVE_ORDER);
       for (Map.Entry<String, List<String>> field : connection.getHeaderFields().entrySet()) {
         // response message
@@ -128,7 +124,6 @@ public interface Client {
           headers.put(field.getKey(), field.getValue());
         }
       }
-
       Integer length = connection.getContentLength();
       if (length == -1) {
         length = null;
@@ -160,6 +155,7 @@ public interface Client {
     HttpURLConnection convertAndSend(Request request, Options options) throws IOException {
       final URL url = new URL(request.url());
       final HttpURLConnection connection = this.getConnection(url);
+      // https协议
       if (connection instanceof HttpsURLConnection) {
         HttpsURLConnection sslCon = (HttpsURLConnection) connection;
         if (sslContextFactory != null) {
@@ -178,7 +174,6 @@ public interface Client {
       Collection<String> contentEncodingValues = request.headers().get(CONTENT_ENCODING);
       boolean gzipEncodedRequest = this.isGzip(contentEncodingValues);
       boolean deflateEncodedRequest = this.isDeflate(contentEncodingValues);
-
       boolean hasAcceptHeader = false;
       Integer contentLength = null;
       for (String field : request.headers().keySet()) {
@@ -205,9 +200,7 @@ public interface Client {
       if (!hasAcceptHeader) {
         connection.addRequestProperty("Accept", "*/*");
       }
-
       byte[] body = request.body();
-
       if (body != null) {
         /*
          * Ignore disableRequestBuffering flag if the empty body was set, to ensure that internal
@@ -236,12 +229,10 @@ public interface Client {
           }
         }
       }
-
       if (body == null && request.httpMethod().isWithBody()) {
         // To use this Header, set 'sun.net.http.allowRestrictedHeaders' property true.
         connection.addRequestProperty("Content-Length", "0");
       }
-
       return connection;
     }
 

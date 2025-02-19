@@ -362,6 +362,7 @@ public class Util {
     return fields;
   }
 
+  // threadGroup-threadName-threadId
   public static String getThreadIdentifier() {
     Thread currentThread = Thread.currentThread();
     return currentThread.getThreadGroup()
