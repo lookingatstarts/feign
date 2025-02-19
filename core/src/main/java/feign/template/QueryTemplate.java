@@ -35,7 +35,7 @@ import java.util.stream.StreamSupport;
 public final class QueryTemplate {
 
   private static final String UNDEF = "undef";
-  private List<Template> values;
+  private final List<Template> values;
   private final Template name;
   private final CollectionFormat collectionFormat;
   private boolean pure = false;
@@ -64,7 +64,7 @@ public final class QueryTemplate {
    * @param values in the template.
    * @param charset for the template.
    * @param collectionFormat to use.
-   * @param decodeSlash if slash characters should be decoded
+   * @param decodeSlash if slash(斜杠\) characters should be decoded(编码)
    * @return a QueryTemplate
    */
   public static QueryTemplate create(
@@ -76,17 +76,14 @@ public final class QueryTemplate {
     if (Util.isBlank(name)) {
       throw new IllegalArgumentException("name is required.");
     }
-
     if (values == null) {
       throw new IllegalArgumentException("values are required");
     }
-
-    /* remove all empty values from the array */
-    Collection<String> remaining =
-        StreamSupport.stream(values.spliterator(), false)
+    // 所有的值
+    Collection<String> remaining = StreamSupport
+            .stream(values.spliterator(), false)
             .filter(Util::isNotBlank)
             .collect(Collectors.toList());
-
     return new QueryTemplate(name, remaining, charset, collectionFormat, decodeSlash);
   }
 

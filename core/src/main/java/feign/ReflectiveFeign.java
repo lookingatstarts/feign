@@ -51,18 +51,16 @@ public class ReflectiveFeign<C> extends Feign {
     return newInstance(target, defaultContextSupplier.newContext());
   }
 
+  /**
+   * 创建代理类
+   */
   @SuppressWarnings("unchecked")
   public <T> T newInstance(Target<T> target, C requestContext) {
     TargetSpecificationVerifier.verify(target);
-
-    Map<Method, MethodHandler> methodToHandler =
-        targetToHandlersByName.apply(target, requestContext);
+    // 解析方法
+    Map<Method, MethodHandler> methodToHandler = targetToHandlersByName.apply(target, requestContext);
     InvocationHandler handler = factory.create(target, methodToHandler);
-    T proxy =
-        (T)
-            Proxy.newProxyInstance(
-                target.type().getClassLoader(), new Class<?>[] {target.type()}, handler);
-
+    T proxy = (T) Proxy.newProxyInstance(target.type().getClassLoader(), new Class<?>[] {target.type()}, handler);
     for (MethodHandler methodHandler : methodToHandler.values()) {
       if (methodHandler instanceof DefaultMethodHandler) {
         ((DefaultMethodHandler) methodHandler).bindTo(proxy);
@@ -72,9 +70,11 @@ public class ReflectiveFeign<C> extends Feign {
     return proxy;
   }
 
+  // InvocationHandler
   static class FeignInvocationHandler implements InvocationHandler {
 
     private final Target target;
+    // 方法处理器
     private final Map<Method, MethodHandler> dispatch;
 
     FeignInvocationHandler(Target target, Map<Method, MethodHandler> dispatch) {
@@ -86,8 +86,7 @@ public class ReflectiveFeign<C> extends Feign {
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
       if ("equals".equals(method.getName())) {
         try {
-          Object otherHandler =
-              args.length > 0 && args[0] != null ? Proxy.getInvocationHandler(args[0]) : null;
+          Object otherHandler = args.length > 0 && args[0] != null ? Proxy.getInvocationHandler(args[0]) : null;
           return equals(otherHandler);
         } catch (IllegalArgumentException e) {
           return false;
@@ -97,10 +96,9 @@ public class ReflectiveFeign<C> extends Feign {
       } else if ("toString".equals(method.getName())) {
         return toString();
       } else if (!dispatch.containsKey(method)) {
-        throw new UnsupportedOperationException(
-            String.format("Method \"%s\" should not be called", method.getName()));
+        throw new UnsupportedOperationException(String.format("Method \"%s\" should not be called", method.getName()));
       }
-
+      // 调用方法
       return dispatch.get(method).invoke(args);
     }
 
@@ -123,6 +121,7 @@ public class ReflectiveFeign<C> extends Feign {
       return target.toString();
     }
   }
+
 
   private static final class ParseHandlersByName<C> {
 
@@ -170,37 +169,31 @@ public class ReflectiveFeign<C> extends Feign {
     }
   }
 
+  /**
+   * 校验接口
+   */
   private static class TargetSpecificationVerifier {
+
     public static <T> void verify(Target<T> target) {
       Class<T> type = target.type();
+      // 必须是接口
       if (!type.isInterface()) {
         throw new IllegalArgumentException("Type must be an interface: " + type);
       }
-
       for (final Method m : type.getMethods()) {
         final Class<?> retType = m.getReturnType();
-
         if (!CompletableFuture.class.isAssignableFrom(retType)) {
           continue; // synchronous case
         }
-
         if (retType != CompletableFuture.class) {
-          throw new IllegalArgumentException(
-              "Method return type is not CompleteableFuture: "
-                  + getFullMethodName(type, retType, m));
+          throw new IllegalArgumentException("Method return type is not CompletableFuture: " + getFullMethodName(type, retType, m));
         }
-
         final Type genRetType = m.getGenericReturnType();
-
         if (!(genRetType instanceof ParameterizedType)) {
-          throw new IllegalArgumentException(
-              "Method return type is not parameterized: " + getFullMethodName(type, genRetType, m));
+          throw new IllegalArgumentException("Method return type is not parameterized: " + getFullMethodName(type, genRetType, m));
         }
-
         if (((ParameterizedType) genRetType).getActualTypeArguments()[0] instanceof WildcardType) {
-          throw new IllegalArgumentException(
-              "Wildcards are not supported for return-type parameters: "
-                  + getFullMethodName(type, genRetType, m));
+          throw new IllegalArgumentException("Wildcards are not supported for return-type parameters: " + getFullMethodName(type, genRetType, m));
         }
       }
     }

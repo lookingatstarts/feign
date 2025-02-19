@@ -34,6 +34,11 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * 1、扫描接口方法的注解（如 @RequestLine, @Headers）。
+ * 2、提取 HTTP 方法、路径、请求头等信息。
+ * 3、生成 RequestTemplate（请求模板），处理占位符（如 {param}）。
+ */
 /** Defines what annotations and values are valid on interfaces. */
 public interface Contract {
 
@@ -251,6 +256,9 @@ public interface Contract {
     }
   }
 
+  /**
+   * 默认实现
+   */
   class Default extends DeclarativeContract {
 
     static final Pattern REQUEST_LINE_PATTERN = Pattern.compile("^([A-Z]+)[ ]*(.*)$");

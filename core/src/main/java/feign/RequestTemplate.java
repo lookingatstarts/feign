@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
 
 /**
  * Request Builder for an HTTP Target.
- *
+ * 一个http请求模版
  * <p>This class is a variation on a UriTemplate, where, in addition to the uri, Headers and Query
  * information also support template expressions.
  */
@@ -53,12 +53,16 @@ import java.util.stream.Collectors;
 public final class RequestTemplate implements Serializable {
 
   private static final Pattern QUERY_STRING_PATTERN = Pattern.compile("(?<!\\{)\\?");
+  // 查询数据
   private final Map<String, QueryTemplate> queries = new LinkedHashMap<>();
+  // 请求头
   private final Map<String, HeaderTemplate> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
   private String target;
   private String fragment;
   private boolean resolved = false;
+  // url
   private UriTemplate uriTemplate;
+  // body
   private BodyTemplate bodyTemplate;
   private HttpMethod method;
   private transient Charset charset = Util.UTF_8;
@@ -537,11 +541,10 @@ public final class RequestTemplate implements Serializable {
   /**
    * The URL for the request. If the template has not been resolved, the url will represent a uri
    * template.
-   *
+   * 请求url
    * @return the url
    */
   public String url() {
-
     /* build the fully qualified url with all query parameters */
     StringBuilder url = new StringBuilder(this.path());
     if (!this.queries.isEmpty()) {
@@ -1014,12 +1017,11 @@ public final class RequestTemplate implements Serializable {
 
   /**
    * The Query String for the template. Expressions are not resolved.
-   *
+   * 查询参数
    * @return the Query String.
    */
   public String queryLine() {
     StringBuilder queryString = new StringBuilder();
-
     if (!this.queries.isEmpty()) {
       Iterator<QueryTemplate> iterator = this.queries.values().iterator();
       while (iterator.hasNext()) {

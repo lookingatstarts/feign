@@ -22,6 +22,7 @@ import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
 
+// 目标方法元数据
 public final class MethodMetadata implements Serializable {
 
   private static final long serialVersionUID = 1L;
@@ -38,8 +39,7 @@ public final class MethodMetadata implements Serializable {
   private final List<String> formParams = new ArrayList<String>();
   private final Map<Integer, Collection<String>> indexToName =
       new LinkedHashMap<Integer, Collection<String>>();
-  private final Map<Integer, Class<? extends Expander>> indexToExpanderClass =
-      new LinkedHashMap<Integer, Class<? extends Expander>>();
+  private final Map<Integer, Class<? extends Expander>> indexToExpanderClass = new LinkedHashMap<Integer, Class<? extends Expander>>();
   private final Map<Integer, Boolean> indexToEncoded = new LinkedHashMap<Integer, Boolean>();
   private transient Map<Integer, Expander> indexToExpander;
   private BitSet parameterToIgnore = new BitSet();

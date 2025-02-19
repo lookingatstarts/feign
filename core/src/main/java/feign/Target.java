@@ -19,6 +19,7 @@ import static feign.Util.checkNotNull;
 import static feign.Util.emptyToNull;
 
 /**
+ * 目标对象
  * <br>
  * <br>
  * <b>relationship to JAXRS 2.0</b><br>

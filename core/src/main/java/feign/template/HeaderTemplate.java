@@ -34,15 +34,14 @@ import java.util.stream.StreamSupport;
  * encoded.
  */
 public final class HeaderTemplate {
-
   private final String name;
+  // 请求头的值分成不同的chunkTemplate 块模版
   private final List<Template> values = new CopyOnWriteArrayList<>();
 
   public static HeaderTemplate create(String name, Iterable<String> values) {
     if (name == null || name.isEmpty()) {
       throw new IllegalArgumentException("name is required.");
     }
-
     if (values == null) {
       throw new IllegalArgumentException("values are required");
     }
@@ -50,11 +49,13 @@ public final class HeaderTemplate {
     return new HeaderTemplate(name, values, Util.UTF_8);
   }
 
+  /**
+   * literal 字面意思
+   */
   public static HeaderTemplate literal(String name, Iterable<String> values) {
     if (name == null || name.isEmpty()) {
       throw new IllegalArgumentException("name is required.");
     }
-
     if (values == null) {
       throw new IllegalArgumentException("values are required");
     }
@@ -116,13 +117,10 @@ public final class HeaderTemplate {
    */
   private HeaderTemplate(String name, Iterable<String> values, Charset charset, boolean literal) {
     this.name = name;
-
     for (String value : values) {
       if (value == null || value.isEmpty()) {
-        /* skip */
         continue;
       }
-
       if (literal) {
         this.values.add(
             new Template(

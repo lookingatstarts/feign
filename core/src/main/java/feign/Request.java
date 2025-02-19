@@ -32,6 +32,9 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 一个不可修改的请求
+ */
 /** An immutable request to an http server. */
 public final class Request implements Serializable {
 
@@ -159,11 +162,17 @@ public final class Request implements Serializable {
     return new Request(httpMethod, url, headers, body, requestTemplate);
   }
 
+  // 请求方式
   private final HttpMethod httpMethod;
+  // 请求url
   private final String url;
+  // 请求头
   private final Map<String, Collection<String>> headers;
+  // 请求体
   private final Body body;
+  // 请求模版
   private final RequestTemplate requestTemplate;
+  // 请求协议
   private final ProtocolVersion protocolVersion;
 
   /**
@@ -516,7 +525,6 @@ public final class Request implements Serializable {
   public static class Body implements Serializable {
 
     private transient Charset encoding;
-
     private byte[] data;
 
     private Body() {

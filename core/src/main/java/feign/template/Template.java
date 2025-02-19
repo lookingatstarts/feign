@@ -34,6 +34,7 @@ public class Template {
 
   private static final Logger logger = Logger.getLogger(Template.class.getName());
   private static final Pattern QUERY_STRING_PATTERN = Pattern.compile("(?<!\\{)(\\?)");
+  // 模板值
   private final String template;
   private final boolean allowUnresolved;
   private final EncodingOptions encode;
@@ -157,6 +158,7 @@ public class Template {
    * @return the encoded value.
    */
   private String encodeLiteral(String value) {
+    // 是否需要编码
     return this.encodeLiteral() ? UriUtils.encode(value, this.charset, true) : value;
   }
 
@@ -200,6 +202,7 @@ public class Template {
   }
 
   /** Parse the template into {@link TemplateChunk}s. */
+  // template -> TemplateChunk
   private void parseTemplate() {
 
     /* parse the entire template */
@@ -207,17 +210,15 @@ public class Template {
   }
 
   /**
-   * Parse a template fragment.
+   * Parse a template fragment(片段).
    *
    * @param fragment to parse
    */
   private void parseFragment(String fragment) {
     ChunkTokenizer tokenizer = new ChunkTokenizer(fragment);
-
     while (tokenizer.hasNext()) {
       /* check to see if we have an expression or a literal */
       String chunk = tokenizer.next();
-
       if (chunk.startsWith("{")) {
         Expression expression = Expressions.create(chunk);
         if (expression == null) {
@@ -254,6 +255,11 @@ public class Template {
   }
 
   /**
+   * Chunk: 块
+   * 解析出最外层{}外的字面两
+   * bb{cc}aa -> bb {cc} aa
+   * bb{cc{dd}}aa -> bb {cc{dd}} aa
+   *
    * Splits a Uri into Chunks that exists inside and outside of an expression, delimited by curly
    * braces "{}". Nested expressions are treated as literals, for example "foo{bar{baz}}" will be
    * treated as "foo, {bar{baz}}". Inspired by Apache CXF Jax-RS.
@@ -329,6 +335,9 @@ public class Template {
     }
   }
 
+  /**
+   * 编码选项
+   */
   public enum EncodingOptions {
     REQUIRED(true),
     NOT_REQUIRED(false);
@@ -344,6 +353,9 @@ public class Template {
     }
   }
 
+  /**
+   * expansion：膨胀，扩展
+   */
   public enum ExpansionOptions {
     ALLOW_UNRESOLVED,
     REQUIRED

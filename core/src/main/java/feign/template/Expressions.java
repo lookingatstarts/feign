@@ -65,6 +65,9 @@ public final class Expressions {
       Pattern.compile(
           "(([\\w-\\[\\]$]|%[0-9A-Fa-f]{2})(\\.?([\\w-\\[\\]$]|%[0-9A-Fa-f]{2}))*(:.*|\\*)?)(,(([\\w-\\[\\]$]|%[0-9A-Fa-f]{2})(\\.?([\\w-\\[\\]$]|%[0-9A-Fa-f]{2}))*(:.*|\\*)?))*");
 
+  /**
+   * 表示一个表达式
+   */
   public static Expression create(final String value) {
 
     /* remove the start and end braces */
@@ -72,13 +75,11 @@ public final class Expressions {
     if (expression == null || expression.isEmpty()) {
       throw new IllegalArgumentException("an expression is required.");
     }
-
     /* Check if the expression is too long */
     if (expression.length() > MAX_EXPRESSION_LENGTH) {
       throw new IllegalArgumentException(
           "expression is too long. Max length: " + MAX_EXPRESSION_LENGTH);
     }
-
     /* create a new regular expression matcher for the expression */
     String variableName = null;
     String variablePattern = null;
@@ -115,6 +116,7 @@ public final class Expressions {
         : null; // Return null if it can't be validated as a Simple Expression -- Probably a Literal
   }
 
+  // 去除{}
   private static String stripBraces(String expression) {
     if (expression == null) {
       return null;

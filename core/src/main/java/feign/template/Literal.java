@@ -15,6 +15,9 @@
  */
 package feign.template;
 
+/**
+ * 字面量
+ */
 /** URI Template Literal. */
 public class Literal implements TemplateChunk {
 
