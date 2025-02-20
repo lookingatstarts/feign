@@ -35,6 +35,9 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * 定义的异常
+ */
 /** Origin exception type for all Http Apis. */
 public class FeignException extends RuntimeException {
 

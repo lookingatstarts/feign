@@ -302,7 +302,7 @@ public final class Request implements Serializable {
 
   /**
    * Request as an HTTP/1.1 request.
-   *
+   * 按照http协议格式输出
    * @return the request.
    */
   @Override
@@ -340,6 +340,7 @@ public final class Request implements Serializable {
     private final long readTimeout;
     private final TimeUnit readTimeoutUnit;
     private final boolean followRedirects;
+    // threadGroup+threadName+threadId合并
     private final Map<String, Map<String, Options>> threadToMethodOptions;
 
     /**
@@ -523,7 +524,7 @@ public final class Request implements Serializable {
   }
 
   /**
-   * Request Body
+   * Request Body：byte[] + charset
    *
    * <p>Considered experimental, will most likely be made internal going forward.
    */
@@ -563,6 +564,7 @@ public final class Request implements Serializable {
       return !isBinary() ? new String(data, encoding) : "Binary data";
     }
 
+    // 是否为二进制数据
     public boolean isBinary() {
       return encoding == null || data == null;
     }

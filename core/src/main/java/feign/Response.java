@@ -26,11 +26,12 @@ import java.util.*;
 /**
  * 响应
  */
-
 /** An immutable response to an http invocation which only returns string content. */
 public final class Response implements Closeable {
 
+  // 响应码
   private final int status;
+  //
   private final String reason;
   private final Map<String, Collection<String>> headers;
   private final Body body;
@@ -250,7 +251,7 @@ public final class Response implements Closeable {
   }
 
   /**
-   * 响应体
+   * 响应体body
    */
   public interface Body extends Closeable {
 
