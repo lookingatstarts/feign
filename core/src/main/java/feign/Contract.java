@@ -78,6 +78,7 @@ public interface Contract {
           continue;
         }
         final MethodMetadata metadata = parseAndValidateMetadata(targetType, method);
+        // configKey: 类似方法签名的构造
         if (result.containsKey(metadata.configKey())) {
           MethodMetadata existingMetadata = result.get(metadata.configKey());
           Type existingReturnType = existingMetadata.returnType();
@@ -101,8 +102,9 @@ public interface Contract {
       return parseAndValidateMetadata(method.getDeclaringClass(), method);
     }
 
-    /** Called indirectly by {@link #parseAndValidateMetadata(Class)}. */
-    // 获取方法元数据
+    /**
+     * 获取方法元数据
+     */
     protected MethodMetadata parseAndValidateMetadata(Class<?> targetType, Method method) {
       final MethodMetadata data = new MethodMetadata();
       data.targetType(targetType);
@@ -112,11 +114,12 @@ public interface Contract {
       if (AlwaysEncodeBodyContract.class.isAssignableFrom(this.getClass())) {
         data.alwaysEncodeBody(true);
       }
+      // 处理类上的注解
       if (targetType.getInterfaces().length == 1) {
         processAnnotationOnClass(data, targetType.getInterfaces()[0]);
       }
       processAnnotationOnClass(data, targetType);
-      // 处理方法参数
+      // 处理方法上的注解
       for (final Annotation methodAnnotation : method.getAnnotations()) {
         processAnnotationOnMethod(data, methodAnnotation, method);
       }
@@ -130,23 +133,21 @@ public interface Contract {
           data.warnings());
       final Class<?>[] parameterTypes = method.getParameterTypes();
       final Type[] genericParameterTypes = method.getGenericParameterTypes();
-
       final Annotation[][] parameterAnnotations = method.getParameterAnnotations();
+      // 注解参数上的注解
       final int count = parameterAnnotations.length;
       for (int i = 0; i < count; i++) {
         boolean isHttpAnnotation = false;
         if (parameterAnnotations[i] != null) {
           isHttpAnnotation = processAnnotationsOnParameter(data, parameterAnnotations[i], i);
         }
-
+        // --------检查---------
         if (isHttpAnnotation) {
           data.ignoreParamater(i);
         }
-
         if ("kotlin.coroutines.Continuation".equals(parameterTypes[i].getName())) {
           data.ignoreParamater(i);
         }
-
         if (parameterTypes[i] == URI.class) {
           data.urlIndex(i);
         } else if (!isHttpAnnotation
@@ -171,20 +172,17 @@ public interface Contract {
           }
         }
       }
-
       if (data.headerMapIndex() != null) {
         // check header map parameter for map type
         if (Map.class.isAssignableFrom(parameterTypes[data.headerMapIndex()])) {
           checkMapKeys("HeaderMap", genericParameterTypes[data.headerMapIndex()]);
         }
       }
-
       if (data.queryMapIndex() != null) {
         if (Map.class.isAssignableFrom(parameterTypes[data.queryMapIndex()])) {
           checkMapKeys("QueryMap", genericParameterTypes[data.queryMapIndex()]);
         }
       }
-
       return data;
     }
 
@@ -195,7 +193,6 @@ public interface Contract {
 
     private static void checkMapKeys(String name, Type genericType) {
       Class<?> keyClass = null;
-
       // assume our type parameterized
       if (ParameterizedType.class.isAssignableFrom(genericType.getClass())) {
         final Type[] parameterTypes = ((ParameterizedType) genericType).getActualTypeArguments();
@@ -213,7 +210,6 @@ public interface Contract {
           }
         }
       }
-
       if (keyClass != null) {
         checkState(
             String.class.equals(keyClass),
@@ -226,13 +222,14 @@ public interface Contract {
     /**
      * Called by parseAndValidateMetadata twice, first on the declaring class, then on the target
      * type (unless they are the same).
-     *
+     * 解析类上的注解
      * @param data metadata collected so far relating to the current java method.
      * @param clz the class to process
      */
     protected abstract void processAnnotationOnClass(MethodMetadata data, Class<?> clz);
 
     /**
+     * 解析方法上的注解
      * @param data metadata collected so far relating to the current java method.
      * @param annotation annotations present on the current method annotation.
      * @param method method currently being processed.
@@ -241,20 +238,20 @@ public interface Contract {
         MethodMetadata data, Annotation annotation, Method method);
 
     /**
+     * 解析参数上的注解
      * @param data metadata collected so far relating to the current java method.
      * @param annotations annotations present on the current parameter annotation.
      * @param paramIndex if you find a name in {@code annotations}, call {@link
      *     #nameParam(MethodMetadata, String, int)} with this as the last parameter.
      * @return true if you called {@link #nameParam(MethodMetadata, String, int)} after finding an
-     *     http-relevant annotation.
+     *     http-relevant annotation(http相关注解).
      */
     protected abstract boolean processAnnotationsOnParameter(
         MethodMetadata data, Annotation[] annotations, int paramIndex);
 
     /** links a parameter name to its index in the method signature. */
     protected void nameParam(MethodMetadata data, String name, int i) {
-      final Collection<String> names =
-          data.indexToName().containsKey(i) ? data.indexToName().get(i) : new ArrayList<String>();
+      final Collection<String> names = data.indexToName().containsKey(i) ? data.indexToName().get(i) : new ArrayList<>();
       names.add(name);
       data.indexToName().put(i, names);
     }

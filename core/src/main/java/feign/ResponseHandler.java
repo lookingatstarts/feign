@@ -32,14 +32,11 @@ public class ResponseHandler {
 
   private final Level logLevel;
   private final Logger logger;
-
   private final Decoder decoder;
   private final ErrorDecoder errorDecoder;
   private final boolean dismiss404;
   private final boolean closeAfterDecode;
-
   private final boolean decodeVoid;
-
   private final ResponseInterceptor.Chain executionChain;
 
   public ResponseHandler(
@@ -92,7 +89,6 @@ public class ResponseHandler {
     if (logLevel == Level.NONE) {
       return response;
     }
-
     return logger.logAndRebufferResponse(configKey, logLevel, response, elapsedTime);
   }
 }

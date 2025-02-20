@@ -16,6 +16,7 @@
 package feign;
 
 /**
+ * responseInterceptor
  * {@code ResponseInterceptor}s may be configured for purposes such as verifying or modifying
  * headers of response, verifying the business status of decoded object, or processing responses to
  * unsuccessful requests. Once the interceptors are applied, {@link

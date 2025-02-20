@@ -195,6 +195,7 @@ public final class Types {
         context, contextRawType, getGenericSupertype(context, contextRawType, supertype));
   }
 
+  // todo 学习
   public static Type resolve(Type context, Class<?> contextRawType, Type toResolve) {
     // This implementation is made a little more complicated in an attempt to avoid object-creation.
     while (true) {
@@ -204,14 +205,11 @@ public final class Types {
         if (toResolve == typeVariable) {
           return toResolve;
         }
-
       } else if (toResolve instanceof Class && ((Class<?>) toResolve).isArray()) {
         Class<?> original = (Class<?>) toResolve;
         Type componentType = original.getComponentType();
         Type newComponentType = resolve(context, contextRawType, componentType);
-        return componentType == newComponentType
-            ? original
-            : new GenericArrayTypeImpl(newComponentType);
+        return componentType == newComponentType ? original : new GenericArrayTypeImpl(newComponentType);
 
       } else if (toResolve instanceof GenericArrayType) {
         GenericArrayType original = (GenericArrayType) toResolve;

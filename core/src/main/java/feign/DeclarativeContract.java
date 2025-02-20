@@ -38,7 +38,6 @@ public abstract class DeclarativeContract extends BaseContract {
 
   @Override
   public final List<MethodMetadata> parseAndValidateMetadata(Class<?> targetType) {
-    // any implementations must register processors
     return super.parseAndValidateMetadata(targetType);
   }
 
@@ -206,6 +205,7 @@ public abstract class DeclarativeContract extends BaseContract {
   }
 
   /**
+   * 注册注解及注解对应的处理器
    * Called while method parameter annotations are being processed
    *
    * @param annotation to be processed
@@ -230,24 +230,25 @@ public abstract class DeclarativeContract extends BaseContract {
     void process(E annotation, MethodMetadata metadata);
   }
 
+  /**
+   * 解析参数上的注解
+   */
   @FunctionalInterface
   public interface ParameterAnnotationProcessor<E extends Annotation> {
 
     DeclarativeContract.ParameterAnnotationProcessor<Annotation> DO_NOTHING = (ann, data, i) -> {};
 
     /**
-     * @param annotation present on the current parameter annotation.
-     * @param metadata metadata collected so far relating to the current java method.
+     * @param annotation present on the current parameter annotation. 参数上注解
+     * @param metadata metadata collected so far relating to the current java method. 方法元数据对象
      * @param paramIndex if you find a name in {@code annotations}, call {@link
-     *     #nameParam(MethodMetadata, String, int)} with this as the last parameter.
-     * @return true if you called {@link #nameParam(MethodMetadata, String, int)} after finding an
-     *     http-relevant annotation.
+     *     #nameParam(MethodMetadata, String, int)} with this as the last parameter. 参数在参数列表的索引
+     * @return true if you called {@link #nameParam(MethodMetadata, String, int)} after finding an http-relevant annotation.
      */
     void process(E annotation, MethodMetadata metadata, int paramIndex);
   }
 
-  private class GuardedAnnotationProcessor
-      implements Predicate<Annotation>, DeclarativeContract.AnnotationProcessor<Annotation> {
+  private class GuardedAnnotationProcessor implements Predicate<Annotation>, DeclarativeContract.AnnotationProcessor<Annotation> {
 
     private final Predicate<Annotation> predicate;
     private final DeclarativeContract.AnnotationProcessor<Annotation> processor;

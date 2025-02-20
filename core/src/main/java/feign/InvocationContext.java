@@ -75,9 +75,8 @@ public class InvocationContext {
     }
     try {
       final boolean shouldDecodeResponseBody =
-          (response.status() >= 200 && response.status() < 300)
-              || (response.status() == 404 && dismiss404 && !isVoidType(returnType));
-
+          (response.status() >= 200 && response.status() < 300) ||
+              (response.status() == 404 && dismiss404 && !isVoidType(returnType));
       if (!shouldDecodeResponseBody) {
         throw decodeError(configKey, response);
       }
@@ -85,15 +84,14 @@ public class InvocationContext {
         ensureClosed(response.body());
         return null;
       }
-
       Class<?> rawType = Types.getRawType(returnType);
       if (TypedResponse.class.isAssignableFrom(rawType)) {
         Type bodyType = Types.resolveLastTypeParameter(returnType, TypedResponse.class);
         return TypedResponse.builder(response).body(decode(response, bodyType)).build();
       }
-
       return decode(response, returnType);
     } finally {
+      // 关闭流
       if (closeAfterDecode) {
         ensureClosed(response.body());
       }

@@ -17,6 +17,7 @@ package feign.spring;
 
 import static feign.Util.checkState;
 
+import feign.Contract;
 import feign.DeclarativeContract;
 import feign.MethodMetadata;
 import feign.Request;
@@ -138,6 +139,7 @@ public class SpringContract extends DeclarativeContract {
     } else if (Util.isNotBlank(secondPriority)) {
       return secondPriority;
     } else {
+      // 如果编译的时候没有加-parameters时，方法上的参数名会丢弃
       if (parameter.isNamePresent()) {
         return parameter.getName();
       } else {
@@ -146,13 +148,16 @@ public class SpringContract extends DeclarativeContract {
     }
   }
 
-  // @PathVariable参数注解处理
+  /**
+   * PathVariable参数注解处理
+   */
   private DeclarativeContract.ParameterAnnotationProcessor<PathVariable>
       pathVariableParameterAnnotationProcessor() {
     return (parameterAnnotation, data, paramIndex) -> {
+      // 注解在第一个参数上
       Parameter parameter = data.method().getParameters()[paramIndex];
-      String name =
-          parameterName(parameterAnnotation.name(), parameterAnnotation.value(), parameter);
+      // name() > values() > parameter.getName()
+      String name = parameterName(parameterAnnotation.name(), parameterAnnotation.value(), parameter);
       nameParam(data, name, paramIndex);
     };
   }

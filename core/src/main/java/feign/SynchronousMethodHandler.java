@@ -26,6 +26,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+/**
+ * 同步调用方法处理器
+ */
 final class SynchronousMethodHandler implements MethodHandler {
 
   private final Client client;
@@ -36,7 +39,6 @@ final class SynchronousMethodHandler implements MethodHandler {
       MethodHandlerConfiguration methodHandlerConfiguration,
       Client client,
       ResponseHandler responseHandler) {
-
     this.methodHandlerConfiguration =
         checkNotNull(methodHandlerConfiguration, "methodHandlerConfiguration");
     this.client = checkNotNull(client, "client for %s", methodHandlerConfiguration.getTarget());
@@ -45,6 +47,7 @@ final class SynchronousMethodHandler implements MethodHandler {
 
   @Override
   public Object invoke(Object[] argv) throws Throwable {
+    // 创建template
     RequestTemplate template = methodHandlerConfiguration.getBuildTemplateFromArgs().create(argv);
     Options options = findOptions(argv);
     Retryer retryer = this.methodHandlerConfiguration.getRetryer().clone();
@@ -53,8 +56,10 @@ final class SynchronousMethodHandler implements MethodHandler {
         return executeAndDecode(template, options);
       } catch (RetryableException e) {
         try {
+          // 重试还是抛出异常重试
           retryer.continueOrPropagate(e);
         } catch (RetryableException th) {
+          //  捕获到RetryableException
           Throwable cause = th.getCause();
           if (methodHandlerConfiguration.getPropagationPolicy() == UNWRAP && cause != null) {
             throw cause;
@@ -62,21 +67,19 @@ final class SynchronousMethodHandler implements MethodHandler {
             throw th;
           }
         }
+        // 输出日志
         if (methodHandlerConfiguration.getLogLevel() != Logger.Level.NONE) {
-          methodHandlerConfiguration
-              .getLogger()
-              .logRetry(
+          methodHandlerConfiguration.getLogger().logRetry(
                   methodHandlerConfiguration.getMetadata().configKey(),
                   methodHandlerConfiguration.getLogLevel());
         }
-        continue;
       }
     }
   }
 
   Object executeAndDecode(RequestTemplate template, Options options) throws Throwable {
     Request request = targetRequest(template);
-
+    // 输出日志
     if (methodHandlerConfiguration.getLogLevel() != Logger.Level.NONE) {
       methodHandlerConfiguration
           .getLogger()
@@ -85,10 +88,10 @@ final class SynchronousMethodHandler implements MethodHandler {
               methodHandlerConfiguration.getLogLevel(),
               request);
     }
-
     Response response;
     long start = System.nanoTime();
     try {
+      // 使用目标客户端执行请求
       response = client.execute(request, options);
       // ensure the request is set. TODO: remove in Feign 12
       response = response.toBuilder().request(request).requestTemplate(template).build();
@@ -102,9 +105,9 @@ final class SynchronousMethodHandler implements MethodHandler {
                 e,
                 elapsedTime(start));
       }
+      // 抛出RetryableException
       throw errorExecuting(request, e);
     }
-
     long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
     return responseHandler.handleResponse(
         methodHandlerConfiguration.getMetadata().configKey(), response,
@@ -116,9 +119,11 @@ final class SynchronousMethodHandler implements MethodHandler {
   }
 
   Request targetRequest(RequestTemplate template) {
+    // 拦截器
     for (RequestInterceptor interceptor : methodHandlerConfiguration.getRequestInterceptors()) {
       interceptor.apply(template);
     }
+    // 通过template生成Request
     return methodHandlerConfiguration.getTarget().apply(template);
   }
 

@@ -57,7 +57,7 @@ public class ReflectiveFeign<C> extends Feign {
   @SuppressWarnings("unchecked")
   public <T> T newInstance(Target<T> target, C requestContext) {
     TargetSpecificationVerifier.verify(target);
-    // 解析方法
+    // 解析方法对应的MethodHandler
     Map<Method, MethodHandler> methodToHandler = targetToHandlersByName.apply(target, requestContext);
     InvocationHandler handler = factory.create(target, methodToHandler);
     T proxy = (T) Proxy.newProxyInstance(target.type().getClassLoader(), new Class<?>[] {target.type()}, handler);
@@ -66,13 +66,12 @@ public class ReflectiveFeign<C> extends Feign {
         ((DefaultMethodHandler) methodHandler).bindTo(proxy);
       }
     }
-
     return proxy;
   }
 
   // InvocationHandler
   static class FeignInvocationHandler implements InvocationHandler {
-
+    // 目标接口
     private final Target target;
     // 方法处理器
     private final Map<Method, MethodHandler> dispatch;
@@ -98,7 +97,7 @@ public class ReflectiveFeign<C> extends Feign {
       } else if (!dispatch.containsKey(method)) {
         throw new UnsupportedOperationException(String.format("Method \"%s\" should not be called", method.getName()));
       }
-      // 调用方法
+      // 调用方法，通过method获取到对应的MethodHandler进行调用
       return dispatch.get(method).invoke(args);
     }
 
@@ -124,7 +123,6 @@ public class ReflectiveFeign<C> extends Feign {
 
 
   private static final class ParseHandlersByName<C> {
-
     private final Contract contract;
     private final MethodHandler.Factory<C> factory;
 
@@ -135,28 +133,28 @@ public class ReflectiveFeign<C> extends Feign {
 
     public Map<Method, MethodHandler> apply(Target target, C requestContext) {
       final Map<Method, MethodHandler> result = new LinkedHashMap<>();
-
+      // 解析方法元数据
       final List<MethodMetadata> metadataList = contract.parseAndValidateMetadata(target.type());
       for (MethodMetadata md : metadataList) {
         final Method method = md.method();
         if (method.getDeclaringClass() == Object.class) {
           continue;
         }
-
         final MethodHandler handler = createMethodHandler(target, md, requestContext);
         result.put(method, handler);
       }
-
       for (Method method : target.type().getMethods()) {
         if (Util.isDefault(method)) {
           final MethodHandler handler = new DefaultMethodHandler(method);
           result.put(method, handler);
         }
       }
-
       return result;
     }
 
+    /**
+     * MethodHandler
+     */
     private MethodHandler createMethodHandler(
         final Target<?> target, final MethodMetadata md, final C requestContext) {
       if (md.isIgnored()) {
@@ -164,7 +162,6 @@ public class ReflectiveFeign<C> extends Feign {
           throw new IllegalStateException(md.configKey() + " is not a method handled by feign");
         };
       }
-
       return factory.create(target, md, requestContext);
     }
   }

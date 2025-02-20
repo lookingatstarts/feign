@@ -32,6 +32,9 @@ public interface InvocationHandlerFactory {
 
     Object invoke(Object[] argv) throws Throwable;
 
+    /**
+     * MethodHandler工厂类
+     */
     interface Factory<C> {
       MethodHandler create(Target<?> target, MethodMetadata md, C requestContext);
     }
