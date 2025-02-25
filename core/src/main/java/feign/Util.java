@@ -248,6 +248,7 @@ public class Util {
       }
       return to.toString();
     } finally {
+      // 关闭流
       ensureClosed(reader);
     }
   }

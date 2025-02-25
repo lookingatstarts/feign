@@ -24,6 +24,9 @@ import java.lang.reflect.Type;
 
 public class StringDecoder implements Decoder {
 
+  /**
+   * 反解为String类型
+   */
   @Override
   public Object decode(Response response, Type type) throws IOException {
     Response.Body body = response.body();

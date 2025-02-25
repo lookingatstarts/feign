@@ -31,6 +31,9 @@ import static feign.Util.emptyToNull;
  */
 public interface Target<T> {
 
+  /**
+   * 目标类(接口)
+   */
   /* The type of the interface this target applies to. ex. {@code Route53}. */
   Class<T> type();
 
@@ -61,9 +64,13 @@ public interface Target<T> {
    * <br>
    * This call is similar to {@code javax.ws.rs.client.WebTarget.request()}, except that we expect
    * transient, but necessary decoration to be applied on invocation.
+   * 通过RequestTemplate创建Request对象
    */
   public Request apply(RequestTemplate input);
 
+  /**
+   * 硬编码
+   */
   public static class HardCodedTarget<T> implements Target<T> {
 
     private final Class<T> type;

@@ -27,10 +27,15 @@ import java.lang.reflect.WildcardType;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * 反射实现的Feign
+ * @param <C>
+ */
 public class ReflectiveFeign<C> extends Feign {
 
   private final ParseHandlersByName<C> targetToHandlersByName;
   private final InvocationHandlerFactory factory;
+  // 异步上下文
   private final AsyncContextSupplier<C> defaultContextSupplier;
 
   ReflectiveFeign(
@@ -56,6 +61,7 @@ public class ReflectiveFeign<C> extends Feign {
    */
   @SuppressWarnings("unchecked")
   public <T> T newInstance(Target<T> target, C requestContext) {
+
     TargetSpecificationVerifier.verify(target);
     // 解析方法对应的MethodHandler
     Map<Method, MethodHandler> methodToHandler = targetToHandlersByName.apply(target, requestContext);
@@ -177,6 +183,7 @@ public class ReflectiveFeign<C> extends Feign {
       if (!type.isInterface()) {
         throw new IllegalArgumentException("Type must be an interface: " + type);
       }
+      // 接口的方法
       for (final Method m : type.getMethods()) {
         final Class<?> retType = m.getReturnType();
         if (!CompletableFuture.class.isAssignableFrom(retType)) {

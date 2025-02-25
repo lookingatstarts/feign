@@ -229,6 +229,9 @@ public abstract class Feign {
     }
   }
 
+  /**
+   * 响应数据在解码为对象前，先应用到映射函数上先被处理
+   */
   public static class ResponseMappingDecoder implements Decoder {
 
     private final ResponseMapper mapper;
