@@ -78,7 +78,6 @@ public class InvocationContext {
       final boolean shouldDecodeResponseBody =
           (response.status() >= 200 && response.status() < 300)
               || (response.status() == 404 && dismiss404 && !isVoidType(returnType));
-
       if (!shouldDecodeResponseBody) {
         throw decodeError(configKey, response);
       }
@@ -102,6 +101,9 @@ public class InvocationContext {
     }
   }
 
+  /**
+   * 读取数据后关闭流
+   */
   private static Response disconnectResponseBodyIfNeeded(Response response) throws IOException {
     final boolean shouldDisconnectResponseBody =
         response.body() != null
@@ -110,7 +112,6 @@ public class InvocationContext {
     if (!shouldDisconnectResponseBody) {
       return response;
     }
-
     try {
       final byte[] bodyData = Util.toByteArray(response.body().asInputStream());
       return response.toBuilder().body(bodyData).build();
