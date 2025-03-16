@@ -44,9 +44,9 @@ public class ReflectiveFeign<C> extends Feign {
   }
 
   /**
-   * creates an api binding to the {@code target}. As this invokes reflection, care should be taken
-   * to cache the result.
+   * @see Feign 方法
    */
+  @Override
   public <T> T newInstance(Target<T> target) {
     return newInstance(target, defaultContextSupplier.newContext());
   }
@@ -54,30 +54,25 @@ public class ReflectiveFeign<C> extends Feign {
   @SuppressWarnings("unchecked")
   public <T> T newInstance(Target<T> target, C requestContext) {
     TargetSpecificationVerifier.verify(target);
-
-    Map<Method, MethodHandler> methodToHandler =
-        targetToHandlersByName.apply(target, requestContext);
+    // 创建Method-> MethodHandler转发表
+    Map<Method, MethodHandler> methodToHandler = targetToHandlersByName.apply(target, requestContext);
     InvocationHandler handler = factory.create(target, methodToHandler);
-    T proxy =
-        (T)
-            Proxy.newProxyInstance(
+    T proxy = (T) Proxy.newProxyInstance(
                 target.type().getClassLoader(), new Class<?>[] {target.type()}, handler);
-
     for (MethodHandler methodHandler : methodToHandler.values()) {
       if (methodHandler instanceof DefaultMethodHandler) {
         ((DefaultMethodHandler) methodHandler).bindTo(proxy);
       }
     }
-
     return proxy;
   }
 
   static class FeignInvocationHandler implements InvocationHandler {
 
-    private final Target target;
+    private final Target<?> target;
     private final Map<Method, MethodHandler> dispatch;
 
-    FeignInvocationHandler(Target target, Map<Method, MethodHandler> dispatch) {
+    FeignInvocationHandler(Target<?> target, Map<Method, MethodHandler> dispatch) {
       this.target = checkNotNull(target, "target");
       this.dispatch = checkNotNull(dispatch, "dispatch for %s", target);
     }
@@ -126,7 +121,13 @@ public class ReflectiveFeign<C> extends Feign {
 
   private static final class ParseHandlersByName<C> {
 
+    /**
+     * 用于解析Api接口元数据metadata
+     */
     private final Contract contract;
+    /**
+     * MethodHandler工厂类，创建MethodHandler，主要的逻辑都在它
+     */
     private final MethodHandler.Factory<C> factory;
 
     ParseHandlersByName(Contract contract, MethodHandler.Factory<C> factory) {
@@ -136,14 +137,14 @@ public class ReflectiveFeign<C> extends Feign {
 
     public Map<Method, MethodHandler> apply(Target target, C requestContext) {
       final Map<Method, MethodHandler> result = new LinkedHashMap<>();
-
+      // 解析api接口，得到方法元数据
       final List<MethodMetadata> metadataList = contract.parseAndValidateMetadata(target.type());
+      // 每一个method创建一个MethodHandler
       for (MethodMetadata md : metadataList) {
         final Method method = md.method();
         if (method.getDeclaringClass() == Object.class) {
           continue;
         }
-
         final MethodHandler handler = createMethodHandler(target, md, requestContext);
         result.put(method, handler);
       }
@@ -165,33 +166,32 @@ public class ReflectiveFeign<C> extends Feign {
           throw new IllegalStateException(md.configKey() + " is not a method handled by feign");
         };
       }
-
       return factory.create(target, md, requestContext);
     }
   }
 
+  /**
+   * 校验方法的返回值CompletableFuture，必须指定了泛型类型
+   */
   private static class TargetSpecificationVerifier {
+
     public static <T> void verify(Target<T> target) {
       Class<T> type = target.type();
       if (!type.isInterface()) {
         throw new IllegalArgumentException("Type must be an interface: " + type);
       }
-
       for (final Method m : type.getMethods()) {
         final Class<?> retType = m.getReturnType();
 
         if (!CompletableFuture.class.isAssignableFrom(retType)) {
           continue; // synchronous case
         }
-
         if (retType != CompletableFuture.class) {
           throw new IllegalArgumentException(
               "Method return type is not CompleteableFuture: "
                   + getFullMethodName(type, retType, m));
         }
-
         final Type genRetType = m.getGenericReturnType();
-
         if (!(genRetType instanceof ParameterizedType)) {
           throw new IllegalArgumentException(
               "Method return type is not parameterized: " + getFullMethodName(type, genRetType, m));

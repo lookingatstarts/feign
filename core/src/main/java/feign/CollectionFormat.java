@@ -21,7 +21,7 @@ import java.util.Collection;
 
 /**
  * Various ways to encode collections in URL parameters.
- *
+ * 查询参数
  * <p>These specific cases are inspired by the <a href="http://swagger.io/specification/">OpenAPI
  * specification</a>.
  */

@@ -29,6 +29,10 @@ import java.util.stream.Collectors;
  * A Generic representation of a Template Expression as defined by <a
  * href="https://tools.ietf.org/html/rfc6570">RFC 6570</a>, with some relaxed rules, allowing the
  * concept to be used in areas outside of the uri.
+ * 1、解析模版表达式，底层依赖于TemplateChunk-> Expression:SimpleExpression PathStyleExpression Literal
+ * 2、只有被@Param注释的参数才能作为解析变量模版的值
+ *
+ * Header uri body都支持模版变量，但是header不需要uri编码
  */
 public class Template {
 
@@ -67,13 +71,7 @@ public class Template {
   }
 
   /**
-   * Create a new Template from the provided {@link TemplateChunk}s.
-   *
-   * @param allowUnresolved if unresolved expressions should remain.
-   * @param encode all values
-   * @param encodeSlash if slash characters should be encoded.
-   * @param charset of the result.
-   * @param chunks for this template.
+   * 创建字面量
    */
   Template(
       ExpansionOptions allowUnresolved,
@@ -89,43 +87,30 @@ public class Template {
     this.template = this.toString();
   }
 
-  /**
-   * Expand the template.
-   *
-   * @param variables containing the values for expansion.
-   * @return a fully qualified URI with the variables expanded.
-   */
   public String expand(Map<String, ?> variables) {
     if (variables == null) {
       throw new IllegalArgumentException("variable map is required.");
     }
-
-    /* resolve all expressions within the template */
+    // 追加所有的templateChunk
     StringBuilder resolved = null;
     for (TemplateChunk chunk : this.templateChunks) {
       String expanded;
       if (chunk instanceof Expression) {
         expanded = this.resolveExpression((Expression) chunk, variables);
       } else {
-        /* chunk is a literal value */
         expanded = chunk.getValue();
       }
       if (expanded == null) {
         continue;
       }
-
-      /* append it to the result */
       if (resolved == null) {
         resolved = new StringBuilder();
       }
       resolved.append(expanded);
     }
-
     if (resolved == null) {
-      /* entire template is unresolved */
       return null;
     }
-
     return resolved.toString();
   }
 
@@ -161,11 +146,10 @@ public class Template {
   }
 
   /**
-   * Variable names contained in the template.
-   *
-   * @return a List of Variable Names.
+   * {name:pattern} -> name就是变量，存储在Expression.name字段
    */
   public List<String> getVariables() {
+    // Expression.getName()
     return this.templateChunks.stream()
         .filter(templateChunk -> Expression.class.isAssignableFrom(templateChunk.getClass()))
         .map(templateChunk -> ((Expression) templateChunk).getName())
@@ -173,11 +157,6 @@ public class Template {
         .collect(Collectors.toList());
   }
 
-  /**
-   * List of all Literals in the Template.
-   *
-   * @return list of Literal values.
-   */
   public List<String> getLiterals() {
     return this.templateChunks.stream()
         .filter(templateChunk -> Literal.class.isAssignableFrom(templateChunk.getClass()))
@@ -190,34 +169,18 @@ public class Template {
     return Collections.unmodifiableList(this.templateChunks);
   }
 
-  /**
-   * Flag to indicate that this template is a literal string, with no variable expressions.
-   *
-   * @return true if this template is made up entirely of literal strings.
-   */
   public boolean isLiteral() {
     return this.getVariables().isEmpty();
   }
 
-  /** Parse the template into {@link TemplateChunk}s. */
   private void parseTemplate() {
-
-    /* parse the entire template */
     this.parseFragment(this.template);
   }
 
-  /**
-   * Parse a template fragment.
-   *
-   * @param fragment to parse
-   */
   private void parseFragment(String fragment) {
     ChunkTokenizer tokenizer = new ChunkTokenizer(fragment);
-
     while (tokenizer.hasNext()) {
-      /* check to see if we have an expression or a literal */
       String chunk = tokenizer.next();
-
       if (chunk.startsWith("{")) {
         Expression expression = Expressions.create(chunk);
         if (expression == null) {
@@ -233,6 +196,8 @@ public class Template {
 
   @Override
   public String toString() {
+    // 如果Expression，getValue()的逻辑返回模版将 {name:pattern} 拼接
+    // 如果是Literal,getValue()直接返回value
     return this.templateChunks.stream().map(TemplateChunk::getValue).collect(Collectors.joining());
   }
 
@@ -244,20 +209,10 @@ public class Template {
     return encodeSlash;
   }
 
-  /**
-   * The Charset for the template.
-   *
-   * @return the Charset, if set. Defaults to UTF-8
-   */
   public Charset getCharset() {
     return this.charset;
   }
 
-  /**
-   * Splits a Uri into Chunks that exists inside and outside of an expression, delimited by curly
-   * braces "{}". Nested expressions are treated as literals, for example "foo{bar{baz}}" will be
-   * treated as "foo, {bar{baz}}". Inspired by Apache CXF Jax-RS.
-   */
   static class ChunkTokenizer {
 
     private List<String> tokens = new ArrayList<>();

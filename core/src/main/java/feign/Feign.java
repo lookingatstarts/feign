@@ -88,11 +88,13 @@ public abstract class Feign {
   }
 
   /**
-   * Returns a new instance of an HTTP API, defined by annotations in the {@link Feign Contract},
-   * for the specified {@code target}. You should cache this result.
+   * 创建api接口代理对象
    */
   public abstract <T> T newInstance(Target<T> target);
 
+  /**
+   * Builder是BaseBuilder子类，新增方法：target(Class,Url)
+   */
   public static class Builder extends BaseBuilder<Builder, Feign> {
 
     private Client client = new Client.Default(null, null);
@@ -193,6 +195,9 @@ public abstract class Feign {
       return super.addCapability(capability);
     }
 
+    /**
+     * Builder extends BaseBuilder 创建api代理对象
+     */
     public <T> T target(Class<T> apiType, String url) {
       return target(new HardCodedTarget<>(apiType, url));
     }
@@ -203,6 +208,7 @@ public abstract class Feign {
 
     @Override
     public Feign internalBuild() {
+      // 响应处理器
       final ResponseHandler responseHandler =
           new ResponseHandler(
               logLevel,
@@ -212,7 +218,9 @@ public abstract class Feign {
               dismiss404,
               closeAfterDecode,
               decodeVoid,
+              // 构造响应处理链
               responseInterceptorChain());
+      // 处理逻辑都在MethodHandler
       MethodHandler.Factory<Object> methodHandlerFactory =
           new SynchronousMethodHandler.Factory(
               client,

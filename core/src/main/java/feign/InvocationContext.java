@@ -66,11 +66,14 @@ public class InvocationContext {
     return response;
   }
 
+  /**
+   * 没有配置ResponseInterceptor，或者配置的ResponseInterceptor处理不了
+   * 如果Chain使用的方式为Default，就会调用proceed方法
+   */
   public Object proceed() throws Exception {
     if (returnType == Response.class) {
       return disconnectResponseBodyIfNeeded(response);
     }
-
     try {
       final boolean shouldDecodeResponseBody =
           (response.status() >= 200 && response.status() < 300)

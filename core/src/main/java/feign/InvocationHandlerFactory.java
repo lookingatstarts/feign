@@ -30,6 +30,9 @@ public interface InvocationHandlerFactory {
    */
   interface MethodHandler {
 
+    /**
+     * InvocationHandler通过method找到MethodHandler,调用MethodHandler#invoke完成请求
+     */
     Object invoke(Object[] argv) throws Throwable;
 
     interface Factory<C> {

@@ -48,8 +48,10 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Clo
   protected QueryMapEncoder queryMapEncoder = QueryMap.MapEncoder.FIELD.instance();
   protected ErrorDecoder errorDecoder = new ErrorDecoder.Default();
   protected Options options = new Options();
-  protected InvocationHandlerFactory invocationHandlerFactory =
-      new InvocationHandlerFactory.Default();
+  /**
+   * InvocationHandler工厂，创建InvocationHandler(jdk动态Proxy，InvocationHandler)
+   */
+  protected InvocationHandlerFactory invocationHandlerFactory = new InvocationHandlerFactory.Default();
   protected boolean dismiss404;
   protected ExceptionPropagationPolicy propagationPolicy = NONE;
   protected List<Capability> capabilities = new ArrayList<>();
@@ -283,20 +285,27 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Clo
         .collect(Collectors.toList());
   }
 
+  /**
+   * 构造者设计模式，创建Feign接口对象，通过Feign去创建api代理对象
+   */
   public final T build() {
     return enrich().internalBuild();
   }
 
   protected abstract T internalBuild();
 
+  /**
+   * response处理器链，让InvocationContext在ResponseInterceptor链上依次处理
+   * Chain.DEFAULT是兜底处理方案
+   */
   protected ResponseInterceptor.Chain responseInterceptorChain() {
     ResponseInterceptor.Chain endOfChain = ResponseInterceptor.Chain.DEFAULT;
+    // 假设存在ResponseInterceptor A , B
     ResponseInterceptor.Chain executionChain =
         this.responseInterceptors.stream()
-            .reduce(ResponseInterceptor::andThen)
-            .map(interceptor -> interceptor.apply(endOfChain))
+            .reduce(ResponseInterceptor::andThen)// 生成一个新的ResponseInterceptor C（A->B）
+            .map(interceptor -> interceptor.apply(endOfChain)) // C.apply(endOfChain) 返回一个新的Chain (A->B->Chain.Defailt)
             .orElse(endOfChain);
-
     return (ResponseInterceptor.Chain)
         Capability.enrich(executionChain, ResponseInterceptor.Chain.class, capabilities);
   }

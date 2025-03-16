@@ -28,6 +28,9 @@ public class RetryableException extends FeignException {
 
   private static final long serialVersionUID = 2L;
 
+  /**
+   * http协议请求头，用于控制下次请求时间
+   */
   private final Long retryAfter;
   private final HttpMethod httpMethod;
 

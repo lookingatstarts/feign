@@ -15,37 +15,19 @@
  */
 package feign;
 
-/**
- * {@code ResponseInterceptor}s may be configured for purposes such as verifying or modifying
- * headers of response, verifying the business status of decoded object, or processing responses to
- * unsuccessful requests. Once the interceptors are applied, {@link
- * ResponseInterceptor#intercept(InvocationContext, Chain)} is called, then the response is decoded.
- */
 public interface ResponseInterceptor {
 
-  /**
-   * Called by {@link ResponseHandler} after refreshing the response and wrapped around the whole
-   * decode process, must either manually invoke {@link Chain#next(InvocationContext)} or manually
-   * create a new response object
-   *
-   * @param invocationContext information surrounding the response being decoded
-   * @return decoded response
-   */
   Object intercept(InvocationContext invocationContext, Chain chain) throws Exception;
 
   /**
-   * Return a new {@link ResponseInterceptor} that invokes the current interceptor first and then
-   * the one that is passed in.
-   *
-   * @param nextInterceptor the interceptor to delegate to after the current
-   * @return a new interceptor that chains the two
+   * A.andThen(B)
+   * 返回一个新的对象C,C调用intercept时，先执行A，在执行B
    */
   default ResponseInterceptor andThen(ResponseInterceptor nextInterceptor) {
     return (ic, chain) ->
         intercept(ic, nextContext -> nextInterceptor.intercept(nextContext, chain));
   }
 
-  /** Contract for delegation to the rest of the chain. */
   interface Chain {
     Chain DEFAULT = InvocationContext::proceed;
 
@@ -59,10 +41,8 @@ public interface ResponseInterceptor {
   }
 
   /**
-   * Apply this interceptor to the given {@code Chain} resulting in an intercepted chain.
-   *
-   * @param chain the chain to add interception around
-   * @return a new chain instance
+   * responseInterceptorA.apply(ChainB)
+   * 返回一个新的Chain,先执行A的intercept，如果请求InvoiceContext继续往下传，就调用chainB#next
    */
   default Chain apply(Chain chain) {
     return request -> intercept(request, chain);

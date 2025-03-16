@@ -141,17 +141,19 @@ public interface Contract {
         if (parameterTypes[i] == URI.class) {
           data.urlIndex(i);
         } else if (!isHttpAnnotation
-            && !Request.Options.class.isAssignableFrom(parameterTypes[i])) {
+            && !Request.Options.class.isAssignableFrom(parameterTypes[i])) { // 参数上没有http相关注解，也不是Options URI，就当作是body请求体
+          // 参数已被处理
           if (data.isAlreadyProcessed(i)) {
             checkState(
                 data.formParams().isEmpty() || data.bodyIndex() == null,
                 "Body parameters cannot be used with form parameters.%s",
                 data.warnings());
-          } else if (!data.alwaysEncodeBody()) {
+          } else if (!data.alwaysEncodeBody()) {// 参数没有被处理，默认将作为body，但是只允许一个参数
             checkState(
                 data.formParams().isEmpty(),
                 "Body parameters cannot be used with form parameters.%s",
                 data.warnings());
+            // 只允许一个参数默认作为body请求体
             checkState(
                 data.bodyIndex() == null,
                 "Method has too many Body parameters: %s%s",

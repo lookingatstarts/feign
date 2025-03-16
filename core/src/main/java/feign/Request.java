@@ -159,6 +159,9 @@ public final class Request implements Serializable {
     return new Request(httpMethod, url, headers, body, requestTemplate);
   }
 
+  /**
+   * 请求方式 url 请求头 请求体 http协议版本
+   */
   private final HttpMethod httpMethod;
   private final String url;
   private final Map<String, Collection<String>> headers;

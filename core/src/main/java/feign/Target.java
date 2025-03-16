@@ -100,6 +100,7 @@ public interface Target<T> {
       if (input.url().indexOf("http") != 0) {
         input.target(url());
       }
+      // 调用RequestTemplate生成Request
       return input.request();
     }
 

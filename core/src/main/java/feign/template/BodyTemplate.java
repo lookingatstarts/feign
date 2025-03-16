@@ -54,6 +54,7 @@ public final class BodyTemplate extends Template {
 
   private BodyTemplate(String value, Charset charset) {
     super(value, ExpansionOptions.ALLOW_UNRESOLVED, EncodingOptions.NOT_REQUIRED, false, charset);
+    // 是否为json
     if (value.startsWith(JSON_TOKEN_START_ENCODED) && value.endsWith(JSON_TOKEN_END_ENCODED)) {
       this.json = true;
     }
@@ -64,7 +65,7 @@ public final class BodyTemplate extends Template {
     String expanded = super.expand(variables);
     // 替换下 {}
     if (this.json) {
-      /* restore all start and end tokens */
+      // 将编码过的{} 替换
       expanded = expanded.replaceAll(JSON_TOKEN_START_ENCODED, JSON_TOKEN_START);
       expanded = expanded.replaceAll(JSON_TOKEN_END_ENCODED, JSON_TOKEN_END);
     }

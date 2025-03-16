@@ -173,42 +173,28 @@ public final class RequestTemplate implements Serializable {
   }
 
   /**
-   * Resolve all expressions using the variable value substitutions provided. Variable values will
-   * be pct-encoded, if they are not already.
-   *
-   * @param variables containing the variable values to use when resolving expressions.
-   * @return a new Request Template with all of the variables resolved.
+   * expand : uriTemplate queriesTemplate-> 追加到uri headersTemplate-> 字面量headersTemplate bodyTemplate -> body
+   * 解析template模板变量
    */
   public RequestTemplate resolve(Map<String, ?> variables) {
-
     StringBuilder uri = new StringBuilder();
-
-    /* create a new template form this one, but explicitly */
+    // 复制
     RequestTemplate resolved = RequestTemplate.from(this);
-
     if (this.uriTemplate == null) {
       /* create a new uri template using the default root */
       this.uriTemplate = UriTemplate.create("", !this.decodeSlash, this.charset);
     }
-
     String expanded = this.uriTemplate.expand(variables);
     if (expanded != null) {
       uri.append(expanded);
     }
-
-    /*
-     * for simplicity, combine the queries into the uri and use the resulting uri to seed the
-     * resolved template.
-     */
-    if (!this.queries.isEmpty()) {
-      /*
-       * since we only want to keep resolved query values, reset any queries on the resolved copy
-       */
-      resolved.queries(Collections.emptyMap());
+    // ---------------------------解析queries,追加到请求uri上--------------------------------
+    if (!this.queries.isEmpty()) { // Map<String,QueryTemplate>
+      resolved.queries(Collections.emptyMap()); // 清空模版的query
       StringBuilder query = new StringBuilder();
+      // 变量QueryTemplate: name(Template)+values(List<Template>)
       Iterator<QueryTemplate> queryTemplates = this.queries.values().iterator();
-
-      while (queryTemplates.hasNext()) {
+      while (queryTemplates.hasNext()) { // 多个通过&分隔
         QueryTemplate queryTemplate = queryTemplates.next();
         String queryExpanded = queryTemplate.expand(variables);
         if (Util.isNotBlank(queryExpanded)) {
@@ -218,7 +204,6 @@ public final class RequestTemplate implements Serializable {
           }
         }
       }
-
       String queryString = query.toString();
       if (!queryString.isEmpty()) {
         Matcher queryMatcher = QUERY_STRING_PATTERN.matcher(uri);
@@ -231,16 +216,9 @@ public final class RequestTemplate implements Serializable {
         uri.append(queryString);
       }
     }
-
-    /* add the uri to result */
     resolved.uri(uri.toString());
-
-    /* headers */
+    // ---------------------------解析headers，共用headers--------------------------------
     if (!this.headers.isEmpty()) {
-      /*
-       * same as the query string, we only want to keep resolved values, so clear the header map on
-       * the resolved instance
-       */
       resolved.headers(Collections.emptyMap());
       for (HeaderTemplate headerTemplate : this.headers.values()) {
         /* resolve the header */
@@ -251,12 +229,10 @@ public final class RequestTemplate implements Serializable {
         }
       }
     }
-
+    // ---------------------------解析bodyTemplate，共用headers--------------------------------
     if (this.bodyTemplate != null) {
       resolved.body(this.bodyTemplate.expand(variables));
     }
-
-    /* mark the new template resolved */
     resolved.resolved = true;
     return resolved;
   }
@@ -278,11 +254,7 @@ public final class RequestTemplate implements Serializable {
   }
 
   /**
-   * Creates a {@link Request} from this template. The template must be resolved before calling this
-   * method, or an {@link IllegalStateException} will be thrown.
-   *
-   * @return a new Request instance.
-   * @throws IllegalStateException if this template has not been resolved.
+   * 创建Request对象，代表一个http请求
    */
   public Request request() {
     if (!this.resolved) {

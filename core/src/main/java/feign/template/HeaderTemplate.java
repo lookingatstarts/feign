@@ -35,42 +35,44 @@ import java.util.stream.StreamSupport;
  */
 public final class HeaderTemplate {
 
+  /**
+   * 名称不支持模版
+   */
   private final String name;
+  /**
+   * 头支持模板变量
+   */
   private final List<Template> values = new CopyOnWriteArrayList<>();
 
+  /**
+   * 创建表达式
+   */
   public static HeaderTemplate create(String name, Iterable<String> values) {
     if (name == null || name.isEmpty()) {
       throw new IllegalArgumentException("name is required.");
     }
-
     if (values == null) {
       throw new IllegalArgumentException("values are required");
     }
-
     return new HeaderTemplate(name, values, Util.UTF_8);
   }
 
+  /**
+   * 创建字面量
+   */
   public static HeaderTemplate literal(String name, Iterable<String> values) {
     if (name == null || name.isEmpty()) {
       throw new IllegalArgumentException("name is required.");
     }
-
     if (values == null) {
       throw new IllegalArgumentException("values are required");
     }
-
     return new HeaderTemplate(name, values, Util.UTF_8, true);
   }
 
-  /**
-   * Append values to a Header Template.
-   *
-   * @param headerTemplate to append to.
-   * @param values to append.
-   * @return a new Header Template with the values added.
-   */
   public static HeaderTemplate append(HeaderTemplate headerTemplate, Iterable<String> values) {
     LinkedHashSet<String> headerValues = new LinkedHashSet<>(headerTemplate.getValues());
+    // 追加请求头值
     headerValues.addAll(
         StreamSupport.stream(values.spliterator(), false)
             .filter(Util::isNotBlank)
@@ -78,13 +80,6 @@ public final class HeaderTemplate {
     return create(headerTemplate.getName(), headerValues);
   }
 
-  /**
-   * Append values to a Header Template, as literals
-   *
-   * @param headerTemplate to append to.
-   * @param values to append.
-   * @return a new Header Template with the values added.
-   */
   public static HeaderTemplate appendLiteral(
       HeaderTemplate headerTemplate, Iterable<String> values) {
     LinkedHashSet<String> headerValues = new LinkedHashSet<>(headerTemplate.getValues());
@@ -95,35 +90,18 @@ public final class HeaderTemplate {
     return literal(headerTemplate.getName(), headerValues);
   }
 
-  /**
-   * Create a new Header Template.
-   *
-   * @param name of the Header.
-   * @param values for the Header.
-   * @param charset to use when encoding the values.
-   */
   private HeaderTemplate(String name, Iterable<String> values, Charset charset) {
     this(name, values, charset, false);
   }
 
-  /**
-   * Create a new Header Template.
-   *
-   * @param name of the header
-   * @param values of the header
-   * @param charset for the header
-   * @param literal indicator. Will treat all values as literals instead of possible expressions.
-   */
   private HeaderTemplate(String name, Iterable<String> values, Charset charset, boolean literal) {
     this.name = name;
-
     for (String value : values) {
       if (value == null || value.isEmpty()) {
-        /* skip */
         continue;
       }
-
       if (literal) {
+        // 创建字面量
         this.values.add(
             new Template(
                 ExpansionOptions.ALLOW_UNRESOLVED,
@@ -132,6 +110,7 @@ public final class HeaderTemplate {
                 charset,
                 Collections.singletonList(Literal.create(value))));
       } else {
+        // 表达式
         this.values.add(
             new Template(
                 value, ExpansionOptions.REQUIRED, EncodingOptions.NOT_REQUIRED, false, charset));
@@ -161,21 +140,16 @@ public final class HeaderTemplate {
     if (!this.values.isEmpty()) {
       for (Template template : this.values) {
         String result = template.expand(variables);
-
         if (result == null) {
-          /* ignore unresolved values */
           continue;
         }
-
         expanded.add(result);
       }
     }
-
     StringBuilder result = new StringBuilder();
     if (!expanded.isEmpty()) {
       result.append(String.join(", ", expanded));
     }
-
     return result.toString();
   }
 }

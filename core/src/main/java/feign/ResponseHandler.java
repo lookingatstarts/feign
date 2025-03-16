@@ -66,6 +66,7 @@ public class ResponseHandler {
       String configKey, Response response, Type returnType, long elapsedTime) throws Exception {
     try {
       response = logAndRebufferResponseIfNeeded(configKey, response, elapsedTime);
+      // 调用Chain来处理
       return executionChain.next(
           new InvocationContext(
               configKey,
@@ -82,6 +83,7 @@ public class ResponseHandler {
       }
       throw errorReading(response.request(), response, e);
     } catch (Exception e) {
+      // 关闭流
       ensureClosed(response.body());
       throw e;
     }
@@ -92,7 +94,6 @@ public class ResponseHandler {
     if (logLevel == Level.NONE) {
       return response;
     }
-
     return logger.logAndRebufferResponse(configKey, logLevel, response, elapsedTime);
   }
 }

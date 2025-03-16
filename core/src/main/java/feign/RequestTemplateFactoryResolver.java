@@ -37,25 +37,38 @@ final class RequestTemplateFactoryResolver {
     this.queryMapEncoder = checkNotNull(queryMapEncoder, "queryMapEncoder");
   }
 
+  /**
+   * 获取RequestTemplate.Factory
+   */
   public RequestTemplate.Factory resolve(Target<?> target, MethodMetadata md) {
     if (!md.formParams().isEmpty() && md.template().bodyTemplate() == null) {
+      // 处理表单数据
       return new BuildFormEncodedTemplateFromArgs(md, encoder, queryMapEncoder, target);
     } else if (md.bodyIndex() != null || md.alwaysEncodeBody()) {
+      // 处理响应体
       return new BuildEncodedTemplateFromArgs(md, encoder, queryMapEncoder, target);
     } else {
       return new BuildTemplateByResolvingArgs(md, queryMapEncoder, target);
     }
   }
 
+  /**
+   *  RequestTemplate create(Object[] args)
+   *  工厂类
+   *  BuildTemplateByResolvingArgs 解析模板变量
+   */
   private static class BuildTemplateByResolvingArgs implements RequestTemplate.Factory {
 
     private final QueryMapEncoder queryMapEncoder;
     protected final MethodMetadata metadata;
     protected final Target<?> target;
+    /**
+     * 通过@Param注释的参数
+     */
     private final Map<Integer, Param.Expander> indexToExpander = new LinkedHashMap<Integer, Param.Expander>();
 
     private BuildTemplateByResolvingArgs(
-        MethodMetadata metadata, QueryMapEncoder queryMapEncoder, Target target) {
+        MethodMetadata metadata, QueryMapEncoder queryMapEncoder, Target<?> target) {
       this.metadata = metadata;
       this.target = target;
       this.queryMapEncoder = queryMapEncoder;
@@ -71,9 +84,7 @@ final class RequestTemplateFactoryResolver {
         try {
           indexToExpander.put(
               indexToExpanderClass.getKey(), indexToExpanderClass.getValue().newInstance());
-        } catch (InstantiationException e) {
-          throw new IllegalStateException(e);
-        } catch (IllegalAccessException e) {
+        } catch (InstantiationException |IllegalAccessException e) {
           throw new IllegalStateException(e);
         }
       }
@@ -81,20 +92,23 @@ final class RequestTemplateFactoryResolver {
 
     @Override
     public RequestTemplate create(Object[] argv) {
-      // 复制
+      // 复制RequestTemplate
       RequestTemplate mutable = RequestTemplate.from(metadata.template());
       mutable.feignTarget(target);
+      // 处理URL参数
       if (metadata.urlIndex() != null) {
         int urlIndex = metadata.urlIndex();
         checkArgument(argv[urlIndex] != null, "URI parameter %s was null", urlIndex);
         mutable.target(String.valueOf(argv[urlIndex]));
       }
+      // Expander处理参数
       Map<String, Object> varBuilder = new LinkedHashMap<String, Object>();
       for (Map.Entry<Integer, Collection<String>> entry : metadata.indexToName().entrySet()) {
         int i = entry.getKey();
         Object value = argv[entry.getKey()];
         if (value != null) { // Null values are skipped.
           if (indexToExpander.containsKey(i)) {
+            // 如果参数是Iterable则会分别处理
             value = expandElements(indexToExpander.get(i), value);
           }
           for (String name : entry.getValue()) {
@@ -102,31 +116,31 @@ final class RequestTemplateFactoryResolver {
           }
         }
       }
-
+      // 将参数替换模板变量：uriTemplate headersTemplate queriesTemplate bodyTemplate
       RequestTemplate template = resolve(argv, mutable, varBuilder);
+      // 最多只能一个queryMap todo
       if (metadata.queryMapIndex() != null) {
-        // add query map parameters after initial resolve so that they take
-        // precedence over any predefined values
         Object value = argv[metadata.queryMapIndex()];
         Map<String, Object> queryMap = toQueryMap(value, metadata.queryMapEncoder());
-        template = addQueryMapQueryParameters(queryMap, template);
+        addQueryMapQueryParameters(queryMap, template);
       }
-
+      // 最多只有一个headMap todo
       if (metadata.headerMapIndex() != null) {
         // add header map parameters for a resolution of the user pojo object
         Object value = argv[metadata.headerMapIndex()];
         Map<String, Object> headerMap = toQueryMap(value, metadata.queryMapEncoder());
-        template = addHeaderMapHeaders(headerMap, template);
+        addHeaderMapHeaders(headerMap, template);
       }
-
       return template;
     }
 
     private Map<String, Object> toQueryMap(Object value, QueryMapEncoder queryMapEncoder) {
+      // 直接返回
       if (value instanceof Map) {
         return (Map<String, Object>) value;
       }
       try {
+        // 使用QueryMapEncoder对value进行encode
         // encode with @QueryMap annotation if exists otherwise with the one from this resolver
         return queryMapEncoder != null
             ? queryMapEncoder.encode(value)
@@ -154,7 +168,7 @@ final class RequestTemplateFactoryResolver {
     }
 
     @SuppressWarnings("unchecked")
-    private RequestTemplate addHeaderMapHeaders(
+    private void addHeaderMapHeaders(
         Map<String, Object> headerMap, RequestTemplate mutable) {
       for (Map.Entry<String, Object> currEntry : headerMap.entrySet()) {
         Collection<String> values = new ArrayList<String>();
@@ -172,11 +186,10 @@ final class RequestTemplateFactoryResolver {
 
         mutable.header(currEntry.getKey(), values);
       }
-      return mutable;
     }
 
     @SuppressWarnings("unchecked")
-    private RequestTemplate addQueryMapQueryParameters(
+    private void addQueryMapQueryParameters(
         Map<String, Object> queryMap, RequestTemplate mutable) {
       for (Map.Entry<String, Object> currEntry : queryMap.entrySet()) {
         Collection<String> values = new ArrayList<String>();
@@ -197,12 +210,10 @@ final class RequestTemplateFactoryResolver {
             values.add(UriUtils.encode(currValue.toString()));
           }
         }
-
         if (values.size() > 0) {
           mutable.query(UriUtils.encode(currEntry.getKey()), values);
         }
       }
-      return mutable;
     }
 
     protected RequestTemplate resolve(
@@ -211,12 +222,16 @@ final class RequestTemplateFactoryResolver {
     }
   }
 
+  /**
+   * 表单
+   */
   private static class BuildFormEncodedTemplateFromArgs extends BuildTemplateByResolvingArgs {
 
     private final Encoder encoder;
 
     private BuildFormEncodedTemplateFromArgs(
-        MethodMetadata metadata, Encoder encoder, QueryMapEncoder queryMapEncoder, Target target) {
+        MethodMetadata metadata, Encoder encoder,
+        QueryMapEncoder queryMapEncoder, Target<?> target) {
       super(metadata, queryMapEncoder, target);
       this.encoder = encoder;
     }
@@ -224,12 +239,14 @@ final class RequestTemplateFactoryResolver {
     @Override
     protected RequestTemplate resolve(
         Object[] argv, RequestTemplate mutable, Map<String, Object> variables) {
+      // 处理表单
       Map<String, Object> formVariables = new LinkedHashMap<String, Object>();
       for (Map.Entry<String, Object> entry : variables.entrySet()) {
         if (metadata.formParams().contains(entry.getKey())) {
           formVariables.put(entry.getKey(), entry.getValue());
         }
       }
+      // 数据存在RequestTemplate#body中
       try {
         encoder.encode(formVariables, Encoder.MAP_STRING_WILDCARD, mutable);
       } catch (EncodeException e) {
@@ -237,10 +254,14 @@ final class RequestTemplateFactoryResolver {
       } catch (RuntimeException e) {
         throw new EncodeException(e.getMessage(), e);
       }
+      // BuildTemplateFromResolvingArgs 解析模板变量
       return super.resolve(argv, mutable, variables);
     }
   }
 
+  /**
+   * 编码响应体
+   */
   private static class BuildEncodedTemplateFromArgs extends BuildTemplateByResolvingArgs {
 
     private final Encoder encoder;
@@ -254,18 +275,17 @@ final class RequestTemplateFactoryResolver {
     @Override
     protected RequestTemplate resolve(
         Object[] argv, RequestTemplate mutable, Map<String, Object> variables) {
-
       boolean alwaysEncodeBody = mutable.methodMetadata().alwaysEncodeBody();
-
       Object body = null;
+      // 获取metadata.bodyIndex参数
       if (!alwaysEncodeBody) {
         body = argv[metadata.bodyIndex()];
         checkArgument(body != null, "Body parameter %s was null", metadata.bodyIndex());
       }
-
+      // 数据存放在body中
       try {
         if (alwaysEncodeBody) {
-          body = argv == null ? new Object[0] : argv;
+          body =(argv == null) ? new Object[0] : argv;
           encoder.encode(body, Object[].class, mutable);
         } else {
           encoder.encode(body, metadata.bodyType(), mutable);
