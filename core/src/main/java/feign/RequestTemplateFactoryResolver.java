@@ -50,11 +50,9 @@ final class RequestTemplateFactoryResolver {
   private static class BuildTemplateByResolvingArgs implements RequestTemplate.Factory {
 
     private final QueryMapEncoder queryMapEncoder;
-
     protected final MethodMetadata metadata;
     protected final Target<?> target;
-    private final Map<Integer, Param.Expander> indexToExpander =
-        new LinkedHashMap<Integer, Param.Expander>();
+    private final Map<Integer, Param.Expander> indexToExpander = new LinkedHashMap<Integer, Param.Expander>();
 
     private BuildTemplateByResolvingArgs(
         MethodMetadata metadata, QueryMapEncoder queryMapEncoder, Target target) {
@@ -83,6 +81,7 @@ final class RequestTemplateFactoryResolver {
 
     @Override
     public RequestTemplate create(Object[] argv) {
+      // 复制
       RequestTemplate mutable = RequestTemplate.from(metadata.template());
       mutable.feignTarget(target);
       if (metadata.urlIndex() != null) {

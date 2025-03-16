@@ -62,6 +62,7 @@ public final class BodyTemplate extends Template {
   @Override
   public String expand(Map<String, ?> variables) {
     String expanded = super.expand(variables);
+    // 替换下 {}
     if (this.json) {
       /* restore all start and end tokens */
       expanded = expanded.replaceAll(JSON_TOKEN_START_ENCODED, JSON_TOKEN_START);

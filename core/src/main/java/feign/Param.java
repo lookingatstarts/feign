@@ -44,6 +44,9 @@ public @interface Param {
    */
   boolean encoded() default false;
 
+  /**
+   * 扩展一个对象转成String，用于替换模版中的变量
+   */
   interface Expander {
 
     /** Expands the value into a string. Does not accept or return null. */
