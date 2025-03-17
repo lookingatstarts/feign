@@ -21,6 +21,7 @@ import static feign.Util.checkNotNull;
 
 import feign.InvocationHandlerFactory.MethodHandler;
 import feign.Request.Options;
+import feign.RequestTemplate.Factory;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -45,7 +46,8 @@ final class SynchronousMethodHandler implements MethodHandler {
   @Override
   public Object invoke(Object[] argv) throws Throwable {
     // 解析RequestTemplate,用argv参数去替换下模板变量，请求体，queryMap 等等
-    RequestTemplate template = methodHandlerConfiguration.getBuildTemplateFromArgs().create(argv);
+    RequestTemplate.Factory buildTemplateFromArgs = methodHandlerConfiguration.getBuildTemplateFromArgs();
+    RequestTemplate template = buildTemplateFromArgs.create(argv);
     // 超时时间
     Options options = findOptions(argv);
     // retryer重试器
