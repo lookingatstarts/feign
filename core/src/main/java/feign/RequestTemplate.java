@@ -260,6 +260,7 @@ public final class RequestTemplate implements Serializable {
     if (!this.resolved) {
       throw new IllegalStateException("template has not been resolved.");
     }
+    // 请求方式 + 请求url(查询参数) + 请求头 + 请求体
     return Request.create(this.method, this.url(), this.headers(), this.body, this);
   }
 

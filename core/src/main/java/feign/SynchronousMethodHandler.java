@@ -21,7 +21,7 @@ import static feign.Util.checkNotNull;
 
 import feign.InvocationHandlerFactory.MethodHandler;
 import feign.Request.Options;
-import feign.RequestTemplate.Factory;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -31,30 +31,30 @@ final class SynchronousMethodHandler implements MethodHandler {
 
   private final Client client;
   private final ResponseHandler responseHandler;
-  private final MethodHandlerConfiguration methodHandlerConfiguration;
+  private final MethodHandlerConfiguration configuration;
 
   private SynchronousMethodHandler(
-      MethodHandlerConfiguration methodHandlerConfiguration,
+      MethodHandlerConfiguration configuration,
       Client client,
       ResponseHandler responseHandler) {
-    this.methodHandlerConfiguration =
-        checkNotNull(methodHandlerConfiguration, "methodHandlerConfiguration");
-    this.client = checkNotNull(client, "client for %s", methodHandlerConfiguration.getTarget());
+    this.configuration =
+        checkNotNull(configuration, "methodHandlerConfiguration");
+    this.client = checkNotNull(client, "client for %s", configuration.getTarget());
     this.responseHandler = responseHandler;
   }
 
   @Override
   public Object invoke(Object[] argv) throws Throwable {
     // 解析RequestTemplate,用argv参数去替换下模板变量，请求体，queryMap 等等
-    RequestTemplate.Factory buildTemplateFromArgs = methodHandlerConfiguration.getBuildTemplateFromArgs();
+    RequestTemplate.Factory buildTemplateFromArgs = configuration.getBuildTemplateFromArgs();
     RequestTemplate template = buildTemplateFromArgs.create(argv);
     // 超时时间
     Options options = findOptions(argv);
     // retryer重试器
-    Retryer retryer = this.methodHandlerConfiguration.getRetryer().clone();
+    Retryer retryer = this.configuration.getRetryer().clone();
     while (true) {
       try {
-        // 执行请求
+        // 执行请求，并序列化响应体
         return executeAndDecode(template, options);
       } catch (RetryableException e) {
         try {
@@ -63,19 +63,19 @@ final class SynchronousMethodHandler implements MethodHandler {
         } catch (RetryableException th) {
           // 抛出cause还是RetryableException
           Throwable cause = th.getCause();
-          if (methodHandlerConfiguration.getPropagationPolicy() == UNWRAP && cause != null) {
+          if (configuration.getPropagationPolicy() == UNWRAP && cause != null) {
             throw cause;
           } else {
             throw th;
           }
         }
         // 输出重试日志
-        if (methodHandlerConfiguration.getLogLevel() != Logger.Level.NONE) {
-          methodHandlerConfiguration
+        if (configuration.getLogLevel() != Logger.Level.NONE) {
+          configuration
               .getLogger()
               .logRetry(
-                  methodHandlerConfiguration.getMetadata().configKey(),
-                  methodHandlerConfiguration.getLogLevel());
+                  configuration.getMetadata().configKey(),
+                  configuration.getLogLevel());
         }
       }
     }
@@ -86,12 +86,13 @@ final class SynchronousMethodHandler implements MethodHandler {
    * @param options 可选参数
    */
   Object executeAndDecode(RequestTemplate template, Options options) throws Throwable {
+    // 构造请求Request
     Request request = targetRequest(template);
-    // 输出Request日志
-    if (methodHandlerConfiguration.getLogLevel() != Logger.Level.NONE) {
-      methodHandlerConfiguration.getLogger().logRequest(
-              methodHandlerConfiguration.getMetadata().configKey(),
-              methodHandlerConfiguration.getLogLevel(),
+    // 输出Request日志: 按http协议格式输出
+    if (configuration.getLogLevel() != Logger.Level.NONE) {
+      configuration.getLogger().logRequest(
+              configuration.getMetadata().configKey(),
+              configuration.getLogLevel(),
               request);
     }
     // 响应体
@@ -105,12 +106,12 @@ final class SynchronousMethodHandler implements MethodHandler {
           .requestTemplate(template).build();
     } catch (IOException e) {
       // 捕获异常，输出错误日志
-      if (methodHandlerConfiguration.getLogLevel() != Logger.Level.NONE) {
-        methodHandlerConfiguration
+      if (configuration.getLogLevel() != Logger.Level.NONE) {
+        configuration
             .getLogger()
             .logIOException(
-                methodHandlerConfiguration.getMetadata().configKey(),
-                methodHandlerConfiguration.getLogLevel(),
+                configuration.getMetadata().configKey(),
+                configuration.getLogLevel(),
                 e,
                 elapsedTime(start));
       }
@@ -118,9 +119,10 @@ final class SynchronousMethodHandler implements MethodHandler {
     }
     // ResponseHandler处理响应结果
     long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+    // 处理器响应体
     return responseHandler.handleResponse(
-        methodHandlerConfiguration.getMetadata().configKey(), response,
-        methodHandlerConfiguration.getMetadata().returnType(), elapsedTime);
+        configuration.getMetadata().configKey(), response,
+        configuration.getMetadata().returnType(), elapsedTime);
   }
 
   long elapsedTime(long start) {
@@ -129,28 +131,32 @@ final class SynchronousMethodHandler implements MethodHandler {
 
  private Request targetRequest(RequestTemplate template) {
     // 执行RequestInterceptor拦截逻辑
-    for (RequestInterceptor interceptor : methodHandlerConfiguration.getRequestInterceptors()) {
+    for (RequestInterceptor interceptor : configuration.getRequestInterceptors()) {
       interceptor.apply(template);
     }
     // 生成请求
-    return methodHandlerConfiguration.getTarget().apply(template);
+   Target<?> target = configuration.getTarget();
+   return target.apply(template);
   }
 
+  /**
+   * 优先从参数中取，在从Options#methodOption中获取
+   */
   Options findOptions(Object[] argv) {
     // 从options#threadToMethod中获取
     if (argv == null || argv.length == 0) {
-      return this.methodHandlerConfiguration
+      return this.configuration
           .getOptions()
-          .getMethodOptions(methodHandlerConfiguration.getMetadata().method().getName());
+          .getMethodOptions(configuration.getMetadata().method().getName());
     }
     return Stream.of(argv)
         .filter(Options.class::isInstance)
         .map(Options.class::cast)
         .findFirst()
         .orElse(
-            this.methodHandlerConfiguration
+            this.configuration
                 .getOptions()
-                .getMethodOptions(methodHandlerConfiguration.getMetadata().method().getName()));
+                .getMethodOptions(configuration.getMetadata().method().getName()));
   }
 
   static class Factory implements MethodHandler.Factory<Object> {
@@ -190,7 +196,8 @@ final class SynchronousMethodHandler implements MethodHandler {
     @Override
     public MethodHandler create(Target<?> target, MethodMetadata md, Object requestContext) {
       // RequestTemplate解析工厂类，通过将MethodMetadata.requestTemplate和方法参数，解析成一个可请求RequestTemplate
-      final RequestTemplate.Factory buildTemplateFromArgs = requestTemplateFactoryResolver.resolve(target, md);
+      // RequestTemplateFactoryResolver根据方法元数据生成RequestTemplate.Factory
+      final RequestTemplate.Factory requestTemplateFactory = requestTemplateFactoryResolver.resolve(target, md);
       // MethodHandler配置类
       MethodHandlerConfiguration methodHandlerConfiguration =
           new MethodHandlerConfiguration(
@@ -200,7 +207,7 @@ final class SynchronousMethodHandler implements MethodHandler {
               requestInterceptors,
               logger,
               logLevel,
-              buildTemplateFromArgs,
+              requestTemplateFactory,
               options,
               propagationPolicy);
       // 创建SynchronousMethodHandler

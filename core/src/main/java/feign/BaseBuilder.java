@@ -304,7 +304,7 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Clo
     ResponseInterceptor.Chain executionChain =
         this.responseInterceptors.stream()
             .reduce(ResponseInterceptor::andThen)// 生成一个新的ResponseInterceptor C（A->B）
-            .map(interceptor -> interceptor.apply(endOfChain)) // C.apply(endOfChain) 返回一个新的Chain (A->B->Chain.Defailt)
+            .map(interceptor -> interceptor.apply(endOfChain)) // C.apply(endOfChain) 返回一个新的Chain (A->B->Chain.Default)
             .orElse(endOfChain);
     return (ResponseInterceptor.Chain)
         Capability.enrich(executionChain, ResponseInterceptor.Chain.class, capabilities);

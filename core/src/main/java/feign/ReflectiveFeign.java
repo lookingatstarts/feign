@@ -29,6 +29,9 @@ import java.util.concurrent.CompletableFuture;
 
 public class ReflectiveFeign<C> extends Feign {
 
+  /**
+   * 用于生成转发表
+   */
   private final ParseHandlersByName<C> targetToHandlersByName;
   private final InvocationHandlerFactory factory;
   private final AsyncContextSupplier<C> defaultContextSupplier;
@@ -128,13 +131,16 @@ public class ReflectiveFeign<C> extends Feign {
     /**
      * MethodHandler工厂类，创建MethodHandler，主要的逻辑都在它
      */
-    private final MethodHandler.Factory<C> factory;
+    private final MethodHandler.Factory<C> methodHandlerFactory;
 
-    ParseHandlersByName(Contract contract, MethodHandler.Factory<C> factory) {
+    ParseHandlersByName(Contract contract, MethodHandler.Factory<C> methodHandlerFactory) {
       this.contract = contract;
-      this.factory = factory;
+      this.methodHandlerFactory = methodHandlerFactory;
     }
 
+    /**
+     * 创建方法转发表
+     */
     public Map<Method, MethodHandler> apply(Target target, C requestContext) {
       final Map<Method, MethodHandler> result = new LinkedHashMap<>();
       // 解析api接口，得到方法元数据
@@ -166,7 +172,7 @@ public class ReflectiveFeign<C> extends Feign {
           throw new IllegalStateException(md.configKey() + " is not a method handled by feign");
         };
       }
-      return factory.create(target, md, requestContext);
+      return methodHandlerFactory.create(target, md, requestContext);
     }
   }
 

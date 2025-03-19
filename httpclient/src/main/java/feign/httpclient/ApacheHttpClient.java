@@ -61,6 +61,7 @@ import org.apache.http.util.EntityUtils;
  * Based on Square, Inc's Retrofit ApacheClient implementation
  */
 public final class ApacheHttpClient implements Client {
+
   private static final String ACCEPT_HEADER_NAME = "Accept";
 
   private final HttpClient client;
@@ -87,9 +88,9 @@ public final class ApacheHttpClient implements Client {
 
   HttpUriRequest toHttpUriRequest(Request request, Request.Options options)
       throws URISyntaxException {
+    // 请求方法
     RequestBuilder requestBuilder = RequestBuilder.create(request.httpMethod().name());
-
-    // per request timeouts
+    // 每个请求的超时时间
     RequestConfig requestConfig =
         (client instanceof Configurable
                 ? RequestConfig.copy(((Configurable) client).getConfig())
@@ -99,56 +100,48 @@ public final class ApacheHttpClient implements Client {
             .setRedirectsEnabled(options.isFollowRedirects())
             .build();
     requestBuilder.setConfig(requestConfig);
-
+    // 请求uri
     URI uri = new URIBuilder(request.url()).build();
-
     requestBuilder.setUri(uri.getScheme() + "://" + uri.getAuthority() + uri.getRawPath());
-
-    // request query params
+    // 请求参数
     List<NameValuePair> queryParams = URLEncodedUtils.parse(uri, requestBuilder.getCharset());
     for (NameValuePair queryParam : queryParams) {
       requestBuilder.addParameter(queryParam);
     }
-
-    // request headers
+    // 请求头
     boolean hasAcceptHeader = false;
     for (Map.Entry<String, Collection<String>> headerEntry : request.headers().entrySet()) {
       String headerName = headerEntry.getKey();
       if (headerName.equalsIgnoreCase(ACCEPT_HEADER_NAME)) {
         hasAcceptHeader = true;
       }
-
       if (headerName.equalsIgnoreCase(Util.CONTENT_LENGTH)) {
         // The 'Content-Length' header is always set by the Apache client and it
         // doesn't like us to set it as well.
         continue;
       }
-
       for (String headerValue : headerEntry.getValue()) {
         requestBuilder.addHeader(headerName, headerValue);
       }
     }
-    // some servers choke on the default accept string, so we'll set it to anything
     if (!hasAcceptHeader) {
       requestBuilder.addHeader(ACCEPT_HEADER_NAME, "*/*");
     }
-
-    // request body
+    // 请求体
     if (request.body() != null) {
-      HttpEntity entity = null;
+      HttpEntity entity;
       if (request.charset() != null) {
+        // 数据类型
         ContentType contentType = getContentType(request);
         String content = new String(request.body(), request.charset());
         entity = new StringEntity(content, contentType);
       } else {
         entity = new ByteArrayEntity(request.body());
       }
-
       requestBuilder.setEntity(entity);
     } else {
       requestBuilder.setEntity(new ByteArrayEntity(new byte[0]));
     }
-
     return requestBuilder.build();
   }
 
@@ -171,14 +164,11 @@ public final class ApacheHttpClient implements Client {
   Response toFeignResponse(HttpResponse httpResponse, Request request) throws IOException {
     StatusLine statusLine = httpResponse.getStatusLine();
     int statusCode = statusLine.getStatusCode();
-
     String reason = statusLine.getReasonPhrase();
-
     Map<String, Collection<String>> headers = new HashMap<String, Collection<String>>();
     for (Header header : httpResponse.getAllHeaders()) {
       String name = header.getName();
       String value = header.getValue();
-
       Collection<String> headerValues = headers.get(name);
       if (headerValues == null) {
         headerValues = new ArrayList<String>();
@@ -186,7 +176,6 @@ public final class ApacheHttpClient implements Client {
       }
       headerValues.add(value);
     }
-
     return Response.builder()
         .status(statusCode)
         .reason(reason)
@@ -196,6 +185,9 @@ public final class ApacheHttpClient implements Client {
         .build();
   }
 
+  /**
+   * 将HttpResponse转Response.Body
+   */
   Response.Body toFeignBody(HttpResponse httpResponse) {
     final HttpEntity entity = httpResponse.getEntity();
     if (entity == null) {
@@ -232,6 +224,7 @@ public final class ApacheHttpClient implements Client {
         return new InputStreamReader(asInputStream(), charset);
       }
 
+      // 关闭body
       @Override
       public void close() throws IOException {
         EntityUtils.consume(entity);

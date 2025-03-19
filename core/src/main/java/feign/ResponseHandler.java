@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 
 /**
+ * 响应处理器
  * The response handler that is used to provide synchronous support on top of standard response
  * handling
  */

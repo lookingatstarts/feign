@@ -166,6 +166,9 @@ public final class Request implements Serializable {
   private final String url;
   private final Map<String, Collection<String>> headers;
   private final Body body;
+  /**
+   * 解析后的RequestTemplate
+   */
   private final RequestTemplate requestTemplate;
   private final ProtocolVersion protocolVersion;
 

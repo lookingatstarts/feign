@@ -99,14 +99,10 @@ public abstract class Logger {
   protected Response logAndRebufferResponse(
       String configKey, Level logLevel, Response response, long elapsedTime) throws IOException {
     String protocolVersion = resolveProtocolVersion(response.protocolVersion());
-    String reason =
-        response.reason() != null && logLevel.compareTo(Level.NONE) > 0
-            ? " " + response.reason()
-            : "";
+    String reason = (response.reason() != null && logLevel.compareTo(Level.NONE) > 0) ? " " + response.reason() : "";
     int status = response.status();
     log(configKey, "<--- %s %s%s (%sms)", protocolVersion, status, reason, elapsedTime);
     if (logLevel.ordinal() >= Level.HEADERS.ordinal()) {
-
       for (String field : response.headers().keySet()) {
         if (shouldLogResponseHeader(field)) {
           for (String value : valuesOrEmpty(response.headers(), field)) {
@@ -114,7 +110,6 @@ public abstract class Logger {
           }
         }
       }
-
       int bodyLength = 0;
       if (response.body() != null && !(status == 204 || status == 205)) {
         // HTTP 204 No Content "...response MUST NOT include a message-body"
@@ -122,7 +117,9 @@ public abstract class Logger {
         if (logLevel.ordinal() >= Level.FULL.ordinal()) {
           log(configKey, ""); // CRLF
         }
+        // toByteArray会关闭流
         byte[] bodyData = Util.toByteArray(response.body().asInputStream());
+        // 关闭body
         ensureClosed(response.body());
         bodyLength = bodyData.length;
         if (logLevel.ordinal() >= Level.FULL.ordinal() && bodyLength > 0) {
@@ -137,7 +134,7 @@ public abstract class Logger {
     return response;
   }
 
-  protected IOException logIOException(
+  protected void logIOException(
       String configKey, Level logLevel, IOException ioe, long elapsedTime) {
     log(
         configKey,
@@ -151,7 +148,6 @@ public abstract class Logger {
       log(configKey, "%s", sw.toString());
       log(configKey, "<--- END ERROR");
     }
-    return ioe;
   }
 
   protected static String resolveProtocolVersion(Request.ProtocolVersion protocolVersion) {

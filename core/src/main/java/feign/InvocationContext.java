@@ -27,7 +27,9 @@ import java.lang.reflect.Type;
 public class InvocationContext {
   private static final long MAX_RESPONSE_BUFFER_SIZE = 8192L;
   private final String configKey;
+  // 解码器
   private final Decoder decoder;
+  // 错误解码器
   private final ErrorDecoder errorDecoder;
   private final boolean dismiss404;
   private final boolean closeAfterDecode;
@@ -72,29 +74,33 @@ public class InvocationContext {
    */
   public Object proceed() throws Exception {
     if (returnType == Response.class) {
+      // 数据小于MAX_RESPONSE_BUFFER_SIZE，流会被关闭
       return disconnectResponseBodyIfNeeded(response);
     }
     try {
+      // 是否反序列化响应体
       final boolean shouldDecodeResponseBody =
           (response.status() >= 200 && response.status() < 300)
               || (response.status() == 404 && dismiss404 && !isVoidType(returnType));
+      // 接口请求失败，ErrorDecode解码异常
       if (!shouldDecodeResponseBody) {
         throw decodeError(configKey, response);
       }
-
+      // 如果返回为void是否反序列化
       if (isVoidType(returnType) && !decodeVoid) {
         ensureClosed(response.body());
         return null;
       }
-
+      // 如果是TypedResponse
       Class<?> rawType = Types.getRawType(returnType);
       if (TypedResponse.class.isAssignableFrom(rawType)) {
         Type bodyType = Types.resolveLastTypeParameter(returnType, TypedResponse.class);
         return TypedResponse.builder(response).body(decode(response, bodyType)).build();
       }
-
+      // 解码
       return decode(response, returnType);
     } finally {
+      // 关闭流
       if (closeAfterDecode) {
         ensureClosed(response.body());
       }
@@ -113,6 +119,7 @@ public class InvocationContext {
       return response;
     }
     try {
+      // Util.toByteArray会关闭流
       final byte[] bodyData = Util.toByteArray(response.body().asInputStream());
       return response.toBuilder().body(bodyData).build();
     } finally {
@@ -120,6 +127,9 @@ public class InvocationContext {
     }
   }
 
+  /**
+   * 解析失败抛出异常
+   */
   private Object decode(Response response, Type returnType) {
     try {
       return decoder.decode(response, returnType);
@@ -136,6 +146,7 @@ public class InvocationContext {
     try {
       return errorDecoder.decode(methodKey, response);
     } finally {
+      // 关闭流
       ensureClosed(response.body());
     }
   }

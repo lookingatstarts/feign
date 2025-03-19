@@ -47,8 +47,12 @@ public class GsonDecoder implements Decoder {
 
   @Override
   public Object decode(Response response, Type type) throws IOException {
-    if (response.status() == 404 || response.status() == 204) return Util.emptyValueOf(type);
-    if (response.body() == null) return null;
+    if (response.status() == 404 || response.status() == 204){
+      return Util.emptyValueOf(type);
+    }
+    if (response.body() == null){
+      return null;
+    }
     Reader reader = response.body().asReader(UTF_8);
     try {
       return gson.fromJson(reader, type);

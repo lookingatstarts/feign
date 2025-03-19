@@ -23,6 +23,16 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+/**
+ * 不可修改
+ * status: 状态码
+ * reason: http协议原语
+ * headers：响应头
+ * body: 响应体
+ * request: 请求
+ * protocolVersion: http协议版本
+ */
+
 /** An immutable response to an http invocation which only returns string content. */
 public final class Response implements Closeable {
 
@@ -63,6 +73,9 @@ public final class Response implements Closeable {
 
     Builder() {}
 
+    /**
+     * 从response创建Builder
+     */
     Builder(Response source) {
       this.status = source.status;
       this.reason = source.reason;
@@ -243,11 +256,17 @@ public final class Response implements Closeable {
     return builder.toString();
   }
 
+  /**
+   * Response关闭就是关闭body
+   */
   @Override
   public void close() {
     Util.ensureClosed(body);
   }
 
+  /**
+   * 响应体
+   */
   public interface Body extends Closeable {
 
     /**
@@ -259,12 +278,21 @@ public final class Response implements Closeable {
      */
     Integer length();
 
+    /**
+     * 如果为true,asInputStream asReader可以读取多次
+     */
     /** True if {@link #asInputStream()} and {@link #asReader()} can be called more than once. */
     boolean isRepeatable();
 
+    /**
+     * 调用者需要调用close进行关闭
+     */
     /** It is the responsibility of the caller to close the stream. */
     InputStream asInputStream() throws IOException;
 
+    /**
+     * 调用者需要调用close进行关闭
+     */
     /**
      * It is the responsibility of the caller to close the stream.
      *
@@ -279,6 +307,9 @@ public final class Response implements Closeable {
     Reader asReader(Charset charset) throws IOException;
   }
 
+  /**
+   * InputStream
+   */
   private static final class InputStreamBody implements Response.Body {
 
     private final InputStream inputStream;
@@ -329,6 +360,9 @@ public final class Response implements Closeable {
     }
   }
 
+  /**
+   * 将数据保存到ByteArray中，支持重复读
+   */
   private static final class ByteArrayBody implements Response.Body {
 
     private final byte[] data;
