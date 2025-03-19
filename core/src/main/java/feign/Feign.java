@@ -214,11 +214,11 @@ public abstract class Feign {
               logLevel,
               logger,
               decoder,
-              errorDecoder,
-              dismiss404,
-              closeAfterDecode,
-              decodeVoid,
-              // 构造响应处理链
+              errorDecoder, // 请求失败时，解码成指定Exception
+              dismiss404, // false
+              closeAfterDecode, // true
+              decodeVoid,// false
+              // 构造响应处理链 Chain
               responseInterceptorChain());
       // 处理逻辑都在MethodHandler
       MethodHandler.Factory<Object> methodHandlerFactory =

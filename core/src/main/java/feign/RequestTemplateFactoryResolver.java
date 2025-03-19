@@ -28,6 +28,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * RequestTemplateFactory解析器，根据methodMetadata模版中是否有queryMap body选择
+ * 不同RequestTemplateFactory实现
+ */
 final class RequestTemplateFactoryResolver {
   private final Encoder encoder;
   private final QueryMapEncoder queryMapEncoder;

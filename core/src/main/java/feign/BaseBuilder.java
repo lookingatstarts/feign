@@ -297,14 +297,19 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Clo
   /**
    * response处理器链，让InvocationContext在ResponseInterceptor链上依次处理
    * Chain.DEFAULT是兜底处理方案
+   *
+   * tips: 自己实现的ResponseInterceptor如果不给Chain传递，一定要关闭流
    */
   protected ResponseInterceptor.Chain responseInterceptorChain() {
     ResponseInterceptor.Chain endOfChain = ResponseInterceptor.Chain.DEFAULT;
     // 假设存在ResponseInterceptor A , B
+    // A必须调用Chain.next，才会调到B
     ResponseInterceptor.Chain executionChain =
         this.responseInterceptors.stream()
-            .reduce(ResponseInterceptor::andThen)// 生成一个新的ResponseInterceptor C（A->B）
-            .map(interceptor -> interceptor.apply(endOfChain)) // C.apply(endOfChain) 返回一个新的Chain (A->B->Chain.Default)
+                // 生成一个新的ResponseInterceptor C（A->B）
+            .reduce(ResponseInterceptor::andThen)
+                // C.apply(endOfChain) 返回一个新的Chain (A->B->Chain.Default)
+            .map(interceptor -> interceptor.apply(endOfChain))
             .orElse(endOfChain);
     return (ResponseInterceptor.Chain)
         Capability.enrich(executionChain, ResponseInterceptor.Chain.class, capabilities);

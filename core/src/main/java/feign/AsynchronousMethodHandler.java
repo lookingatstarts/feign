@@ -54,7 +54,7 @@ final class AsynchronousMethodHandler<C> implements MethodHandler {
 
   @Override
   public Object invoke(Object[] argv) throws Throwable {
-    RequestTemplate template = methodHandlerConfiguration.getBuildTemplateFromArgs().create(argv);
+    RequestTemplate template = methodHandlerConfiguration.getRequestTemplateFactory().create(argv);
     Options options = findOptions(argv);
     Retryer retryer = this.methodHandlerConfiguration.getRetryer().clone();
     try {

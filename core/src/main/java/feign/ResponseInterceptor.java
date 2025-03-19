@@ -17,6 +17,9 @@ package feign;
 
 public interface ResponseInterceptor {
 
+  /**
+   * 如果要将InvocationContext往下传，就必须调用Chain.next
+   */
   Object intercept(InvocationContext invocationContext, Chain chain) throws Exception;
 
   /**
@@ -28,6 +31,9 @@ public interface ResponseInterceptor {
         intercept(ic, nextContext -> nextInterceptor.intercept(nextContext, chain));
   }
 
+  /***
+   * 责任链设计模式
+   */
   interface Chain {
     Chain DEFAULT = InvocationContext::proceed;
 

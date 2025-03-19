@@ -63,11 +63,15 @@ public class ResponseHandler {
     this.executionChain = executionChain;
   }
 
+  /**
+   * 解码响应
+   */
   public Object handleResponse(
       String configKey, Response response, Type returnType, long elapsedTime) throws Exception {
     try {
-      response = logAndRebufferResponseIfNeeded(configKey, response, elapsedTime);
-      // 调用Chain来处理
+      // 1、如果log级别不为NONE,会读取数据封装到ByteArrayBody中并关闭Body
+      response = logAndReBufferResponseIfNeeded(configKey, response, elapsedTime);
+      // 2、调用Chain来处理，可以通过新增interceptor来捕获异常
       return executionChain.next(
           new InvocationContext(
               configKey,
@@ -79,9 +83,11 @@ public class ResponseHandler {
               response,
               returnType));
     } catch (final IOException e) {
+      // 输出IO出错日志
       if (logLevel != Level.NONE) {
         logger.logIOException(configKey, logLevel, e, elapsedTime);
       }
+      // 封装成FeignException
       throw errorReading(response.request(), response, e);
     } catch (Exception e) {
       // 关闭流
@@ -90,7 +96,7 @@ public class ResponseHandler {
     }
   }
 
-  private Response logAndRebufferResponseIfNeeded(
+  private Response logAndReBufferResponseIfNeeded(
       String configKey, Response response, long elapsedTime) throws IOException {
     if (logLevel == Level.NONE) {
       return response;

@@ -70,9 +70,13 @@ public class ReflectiveFeign<C> extends Feign {
     return proxy;
   }
 
+  /**
+   * Proxy的InvocationHandler，找到method对应MethodHandler进行处理
+   */
   static class FeignInvocationHandler implements InvocationHandler {
 
     private final Target<?> target;
+    // 方法转发表
     private final Map<Method, MethodHandler> dispatch;
 
     FeignInvocationHandler(Target<?> target, Map<Method, MethodHandler> dispatch) {
@@ -95,10 +99,10 @@ public class ReflectiveFeign<C> extends Feign {
       } else if ("toString".equals(method.getName())) {
         return toString();
       } else if (!dispatch.containsKey(method)) {
-        throw new UnsupportedOperationException(
-            String.format("Method \"%s\" should not be called", method.getName()));
+        // 方法没有被代理，不能调用
+        throw new UnsupportedOperationException(String.format("Method \"%s\" should not be called", method.getName()));
       }
-
+      // 转到对应MethodHandler执行相关请求逻辑
       return dispatch.get(method).invoke(args);
     }
 
@@ -122,6 +126,9 @@ public class ReflectiveFeign<C> extends Feign {
     }
   }
 
+  /**
+   * 用于生成方法转发表
+   */
   private static final class ParseHandlersByName<C> {
 
     /**

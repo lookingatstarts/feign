@@ -46,8 +46,10 @@ final class SynchronousMethodHandler implements MethodHandler {
   @Override
   public Object invoke(Object[] argv) throws Throwable {
     // 解析RequestTemplate,用argv参数去替换下模板变量，请求体，queryMap 等等
-    RequestTemplate.Factory buildTemplateFromArgs = configuration.getBuildTemplateFromArgs();
-    RequestTemplate template = buildTemplateFromArgs.create(argv);
+    // requestTemplateFactory内部会有methodMetadata的引用，一个method会有一个Factory
+    RequestTemplate.Factory requestTemplateFactory = configuration.getRequestTemplateFactory();
+    // 替换模版值
+    RequestTemplate template = requestTemplateFactory.create(argv);
     // 超时时间
     Options options = findOptions(argv);
     // retryer重试器
@@ -56,7 +58,8 @@ final class SynchronousMethodHandler implements MethodHandler {
       try {
         // 执行请求，并序列化响应体
         return executeAndDecode(template, options);
-      } catch (RetryableException e) {
+      } catch (RetryableException e) {// 只处理重试异常
+        // ----------只有抛出RetryException异常才能重试--------------
         try {
           // 决定抛出异常还是重试
           retryer.continueOrPropagate(e);
@@ -88,12 +91,11 @@ final class SynchronousMethodHandler implements MethodHandler {
   Object executeAndDecode(RequestTemplate template, Options options) throws Throwable {
     // 构造请求Request
     Request request = targetRequest(template);
+    Logger.Level logLevel = configuration.getLogLevel();
     // 输出Request日志: 按http协议格式输出
-    if (configuration.getLogLevel() != Logger.Level.NONE) {
+    if (logLevel != Logger.Level.NONE) {
       configuration.getLogger().logRequest(
-              configuration.getMetadata().configKey(),
-              configuration.getLogLevel(),
-              request);
+              configuration.getMetadata().configKey(), logLevel, request);
     }
     // 响应体
     Response response;
@@ -106,20 +108,17 @@ final class SynchronousMethodHandler implements MethodHandler {
           .requestTemplate(template).build();
     } catch (IOException e) {
       // 捕获异常，输出错误日志
-      if (configuration.getLogLevel() != Logger.Level.NONE) {
-        configuration
-            .getLogger()
-            .logIOException(
+      if (logLevel != Logger.Level.NONE) {
+        configuration.getLogger().logIOException(
                 configuration.getMetadata().configKey(),
-                configuration.getLogLevel(),
-                e,
-                elapsedTime(start));
+                logLevel, e, elapsedTime(start));
       }
+      // 只有RetryableException异常才会重试
       throw errorExecuting(request, e);
     }
     // ResponseHandler处理响应结果
     long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
-    // 处理器响应体
+    // ResponseHandler解码响应体
     return responseHandler.handleResponse(
         configuration.getMetadata().configKey(), response,
         configuration.getMetadata().returnType(), elapsedTime);

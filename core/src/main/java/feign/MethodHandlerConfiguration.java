@@ -33,7 +33,7 @@ public class MethodHandlerConfiguration {
 
   private final Logger.Level logLevel;
 
-  private final RequestTemplate.Factory buildTemplateFromArgs;
+  private final RequestTemplate.Factory requestTemplateFactory;
 
   private final Request.Options options;
 
@@ -63,8 +63,8 @@ public class MethodHandlerConfiguration {
     return logLevel;
   }
 
-  public RequestTemplate.Factory getBuildTemplateFromArgs() {
-    return buildTemplateFromArgs;
+  public RequestTemplate.Factory getRequestTemplateFactory() {
+    return requestTemplateFactory;
   }
 
   public Request.Options getOptions() {
@@ -82,7 +82,7 @@ public class MethodHandlerConfiguration {
       List<RequestInterceptor> requestInterceptors,
       Logger logger,
       Logger.Level logLevel,
-      RequestTemplate.Factory buildTemplateFromArgs,
+      RequestTemplate.Factory requestTemplateFactory,
       Request.Options options,
       ExceptionPropagationPolicy propagationPolicy) {
     this.target = checkNotNull(target, "target");
@@ -92,7 +92,7 @@ public class MethodHandlerConfiguration {
     this.logger = checkNotNull(logger, "logger for %s", target);
     this.logLevel = checkNotNull(logLevel, "logLevel for %s", target);
     this.metadata = checkNotNull(metadata, "metadata for %s", target);
-    this.buildTemplateFromArgs = checkNotNull(buildTemplateFromArgs, "metadata for %s", target);
+    this.requestTemplateFactory = checkNotNull(requestTemplateFactory, "metadata for %s", target);
     this.options = checkNotNull(options, "options for %s", target);
     this.propagationPolicy = propagationPolicy;
   }

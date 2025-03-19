@@ -40,6 +40,9 @@ public interface InvocationHandlerFactory {
     }
   }
 
+  /**
+   * InvoiceHandlerFactory用于创建InvocationHandler
+   */
   static final class Default implements InvocationHandlerFactory {
 
     @Override
