@@ -391,6 +391,7 @@ public class FeignException extends RuntimeException {
     }
   }
 
+  // 服务端异常
   public static class FeignServerException extends FeignException {
     public FeignServerException(
         int status,

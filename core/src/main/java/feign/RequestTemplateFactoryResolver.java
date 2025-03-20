@@ -96,7 +96,7 @@ final class RequestTemplateFactoryResolver {
 
     @Override
     public RequestTemplate create(Object[] argv) {
-      // 复制RequestTemplate
+      // 复制RequestTemplate，通过模版创建
       RequestTemplate mutable = RequestTemplate.from(metadata.template());
       mutable.feignTarget(target);
       // 处理URL参数
@@ -122,7 +122,7 @@ final class RequestTemplateFactoryResolver {
       }
       // 将参数替换模板变量：uriTemplate headersTemplate queriesTemplate bodyTemplate
       RequestTemplate template = resolve(argv, mutable, varBuilder);
-      // 最多只能一个queryMap todo
+      // 最多只能一个queryMap
       if (metadata.queryMapIndex() != null) {
         Object value = argv[metadata.queryMapIndex()];
         Map<String, Object> queryMap = toQueryMap(value, metadata.queryMapEncoder());
@@ -197,7 +197,6 @@ final class RequestTemplateFactoryResolver {
         Map<String, Object> queryMap, RequestTemplate mutable) {
       for (Map.Entry<String, Object> currEntry : queryMap.entrySet()) {
         Collection<String> values = new ArrayList<String>();
-
         Object currValue = currEntry.getValue();
         if (currValue instanceof Iterable<?>) {
           Iterator<?> iter = ((Iterable<?>) currValue).iterator();

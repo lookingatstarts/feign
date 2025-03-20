@@ -94,10 +94,11 @@ public interface Target<T> {
       return url;
     }
 
-    /* no authentication or other special activity. just insert the url. */
     @Override
     public Request apply(RequestTemplate input) {
+      // 判断url是否已经指定了主机
       if (input.url().indexOf("http") != 0) {
+        // 设置主机
         input.target(url());
       }
       // 调用RequestTemplate生成Request

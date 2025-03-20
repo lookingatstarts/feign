@@ -24,18 +24,34 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public interface Retryer extends Cloneable {
 
   /**
+   * 如果允许重试，则return或者阻塞一段时间，否则抛出异常
    * if retry is permitted, return (possibly after sleeping). Otherwise, propagate the exception.
    */
   void continueOrPropagate(RetryableException e);
 
   Retryer clone();
 
+  /**
+   * 默认实现
+   */
   class Default implements Retryer {
 
+    /**
+     * 最大重试次数
+     */
     private final int maxAttempts;
+    /**
+     * 重试间隔ms
+     */
     private final long period;
+    /**
+     * 最大重试间隔ms
+     */
     private final long maxPeriod;
     int attempt;
+    /**
+     * 总阻塞时长
+     */
     long sleptForMillis;
 
     public Default() {
@@ -55,11 +71,12 @@ public interface Retryer extends Cloneable {
     }
 
     public void continueOrPropagate(RetryableException e) {
+      // 重试次数+1 >=最大重试次数 抛出原异常
       if (attempt++ >= maxAttempts) {
         throw e;
       }
-
       long interval;
+      // 服务端返回Retry-After响应头
       if (e.retryAfter() != null) {
         interval = e.retryAfter() - currentTimeMillis();
         if (interval > maxPeriod) {

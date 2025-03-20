@@ -146,6 +146,9 @@ public class ReflectiveFeign<C> extends Feign {
     }
 
     /**
+     * ParseHandlersByName:
+     * 1、通过Contract解析api接口得到MethodHandler
+     * 2、通过MethodHandler.Factory创建SynchronousMethodHandler
      * 创建方法转发表
      */
     public Map<Method, MethodHandler> apply(Target target, C requestContext) {
@@ -161,14 +164,12 @@ public class ReflectiveFeign<C> extends Feign {
         final MethodHandler handler = createMethodHandler(target, md, requestContext);
         result.put(method, handler);
       }
-
       for (Method method : target.type().getMethods()) {
         if (Util.isDefault(method)) {
           final MethodHandler handler = new DefaultMethodHandler(method);
           result.put(method, handler);
         }
       }
-
       return result;
     }
 

@@ -43,29 +43,37 @@ final class SynchronousMethodHandler implements MethodHandler {
     this.responseHandler = responseHandler;
   }
 
+  /**
+   * 1、用argv参数生成RequestTemplate
+   * 2、获取Options超时时间
+   * 3、executeAndDecode(requestTemplate,options) 发送请求并解码响应
+   * 4、如果抛出RetryableException，Retry判断是否重试
+   * 5、如果重试，输出重试日志
+   */
   @Override
   public Object invoke(Object[] argv) throws Throwable {
     // 解析RequestTemplate,用argv参数去替换下模板变量，请求体，queryMap 等等
     // requestTemplateFactory内部会有methodMetadata的引用，一个method会有一个Factory
     RequestTemplate.Factory requestTemplateFactory = configuration.getRequestTemplateFactory();
-    // 替换模版值
+    // 1、解析参数后生成RequestTemplate
     RequestTemplate template = requestTemplateFactory.create(argv);
-    // 超时时间
+    // 2、获取超时时间
     Options options = findOptions(argv);
-    // retryer重试器
+    // 3、retryer重试器
     Retryer retryer = this.configuration.getRetryer().clone();
     while (true) {
       try {
-        // 执行请求，并序列化响应体
+        // 4、执行请求，并序列化响应体
         return executeAndDecode(template, options);
-      } catch (RetryableException e) {// 只处理重试异常
+      } catch (RetryableException e) {
         // ----------只有抛出RetryException异常才能重试--------------
         try {
           // 决定抛出异常还是重试
           retryer.continueOrPropagate(e);
         } catch (RetryableException th) {
-          // 抛出cause还是RetryableException
+          // 不在重试则抛出异常
           Throwable cause = th.getCause();
+          // 抛出cause还是RetryableException
           if (configuration.getPropagationPolicy() == UNWRAP && cause != null) {
             throw cause;
           } else {
@@ -74,9 +82,7 @@ final class SynchronousMethodHandler implements MethodHandler {
         }
         // 输出重试日志
         if (configuration.getLogLevel() != Logger.Level.NONE) {
-          configuration
-              .getLogger()
-              .logRetry(
+          configuration.getLogger().logRetry(
                   configuration.getMetadata().configKey(),
                   configuration.getLogLevel());
         }
@@ -85,14 +91,17 @@ final class SynchronousMethodHandler implements MethodHandler {
   }
 
   /**
-   * @param template 模板变量解析后的
-   * @param options 可选参数
+   * 1、根据RequestTemplate和Target生成Request
+   * 2、输出请求日志
+   * 3、通过client执行请求
+   * 4、如果请求出错，输入IO Exception日志
+   * 5、ResponseHandler#handleResponse 解码响应体
    */
   Object executeAndDecode(RequestTemplate template, Options options) throws Throwable {
-    // 构造请求Request
+    // 1、构造请求Request
     Request request = targetRequest(template);
     Logger.Level logLevel = configuration.getLogLevel();
-    // 输出Request日志: 按http协议格式输出
+    // 2、输出Request日志: 按http协议格式输出
     if (logLevel != Logger.Level.NONE) {
       configuration.getLogger().logRequest(
               configuration.getMetadata().configKey(), logLevel, request);
@@ -101,24 +110,24 @@ final class SynchronousMethodHandler implements MethodHandler {
     Response response;
     long start = System.nanoTime();
     try {
-      // 执行请求
+      // 3、通过client执行请求
       response = client.execute(request, options);
       response = response.toBuilder()
           .request(request)
           .requestTemplate(template).build();
     } catch (IOException e) {
-      // 捕获异常，输出错误日志
+      // 4、捕获异常，输出错误日志
       if (logLevel != Logger.Level.NONE) {
         configuration.getLogger().logIOException(
                 configuration.getMetadata().configKey(),
                 logLevel, e, elapsedTime(start));
       }
-      // 只有RetryableException异常才会重试
+      // 只有RetryableException异常才会重试，仅针对IOException封装成RetryableException
+      // 让Retry进行重试
       throw errorExecuting(request, e);
     }
-    // ResponseHandler处理响应结果
     long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
-    // ResponseHandler解码响应体
+    // 5、ResponseHandler解码响应体
     return responseHandler.handleResponse(
         configuration.getMetadata().configKey(), response,
         configuration.getMetadata().returnType(), elapsedTime);
@@ -135,6 +144,7 @@ final class SynchronousMethodHandler implements MethodHandler {
     }
     // 生成请求
    Target<?> target = configuration.getTarget();
+    // 生成Request对象
    return target.apply(template);
   }
 
@@ -158,6 +168,9 @@ final class SynchronousMethodHandler implements MethodHandler {
                 .getMethodOptions(configuration.getMetadata().method().getName()));
   }
 
+  /**
+   * MethodHandler工厂类：SynchronousMethodHandler
+   */
   static class Factory implements MethodHandler.Factory<Object> {
 
     private final Client client;
@@ -171,15 +184,15 @@ final class SynchronousMethodHandler implements MethodHandler {
     private final Options options;
 
     Factory(
-        Client client,
-        Retryer retryer,
-        List<RequestInterceptor> requestInterceptors,
-        ResponseHandler responseHandler,
+        Client client, // 客户端
+        Retryer retryer, // 重试器
+        List<RequestInterceptor> requestInterceptors,// 请求拦截器
+        ResponseHandler responseHandler,// response处理器
         Logger logger,
         Logger.Level logLevel,
-        ExceptionPropagationPolicy propagationPolicy,
-        RequestTemplateFactoryResolver requestTemplateFactoryResolver,
-        Options options) {
+        ExceptionPropagationPolicy propagationPolicy,// 当捕获到RetryException是抛出cause还是RetryException
+        RequestTemplateFactoryResolver requestTemplateFactoryResolver,// 获取RequestTemplateFactory工厂类
+        Options options) {// 超时配置
       this.client = checkNotNull(client, "client");
       this.retryer = checkNotNull(retryer, "retryer");
       this.requestInterceptors = checkNotNull(requestInterceptors, "requestInterceptors");

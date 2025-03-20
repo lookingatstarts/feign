@@ -106,7 +106,7 @@ public final class QueryTemplate {
 
   /**
    * Create a new Query Template.
-   *
+   * 创建一个查询Template
    * @param name of the query parameter.
    * @param values for the parameter.
    * @param collectionFormat to use.

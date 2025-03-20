@@ -53,15 +53,22 @@ import java.util.stream.Collectors;
 public final class RequestTemplate implements Serializable {
 
   private static final Pattern QUERY_STRING_PATTERN = Pattern.compile("(?<!\\{)\\?");
+  // 解析参数，该字段的值会复用
   private final Map<String, QueryTemplate> queries = new LinkedHashMap<>();
+  // 解析参数后会复用该字段
   private final Map<String, HeaderTemplate> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+  // 请求主机
   private String target;
+  // fragment
   private String fragment;
   private boolean resolved = false;
+  // 解析参数后赋值到uri
   private UriTemplate uriTemplate;
+  // 解析后值赋值给body
   private BodyTemplate bodyTemplate;
   private HttpMethod method;
   private transient Charset charset = Util.UTF_8;
+  //请求体
   private Request.Body body = Request.Body.empty();
   private boolean decodeSlash = true;
   private CollectionFormat collectionFormat = CollectionFormat.EXPLODED;
@@ -178,12 +185,11 @@ public final class RequestTemplate implements Serializable {
    */
   public RequestTemplate resolve(Map<String, ?> variables) {
     StringBuilder uri = new StringBuilder();
-    // 复制
     RequestTemplate resolved = RequestTemplate.from(this);
     if (this.uriTemplate == null) {
-      /* create a new uri template using the default root */
       this.uriTemplate = UriTemplate.create("", !this.decodeSlash, this.charset);
     }
+    // 解析uriTemplate
     String expanded = this.uriTemplate.expand(variables);
     if (expanded != null) {
       uri.append(expanded);
@@ -217,7 +223,7 @@ public final class RequestTemplate implements Serializable {
       }
     }
     resolved.uri(uri.toString());
-    // ---------------------------解析headers，共用headers--------------------------------
+    // ---------------------------解析headers，复用headers--------------------------------
     if (!this.headers.isEmpty()) {
       resolved.headers(Collections.emptyMap());
       for (HeaderTemplate headerTemplate : this.headers.values()) {
@@ -254,7 +260,10 @@ public final class RequestTemplate implements Serializable {
   }
 
   /**
-   * 创建Request对象，代表一个http请求
+   * 创建Request对象，代表一个http请求：method+url+header+请求body
+   * 1、如果是GET请求，一般通过query string parameter传递参数
+   * 2、如果是POST请求，未指定content-type，数据会以表单数据格式存在在请求体中
+   *    若指定为application/json，数据会以request payload存在请求体中
    */
   public Request request() {
     if (!this.resolved) {
@@ -471,12 +480,9 @@ public final class RequestTemplate implements Serializable {
    * @return a RequestTemplate for chaining.
    */
   public RequestTemplate target(String target) {
-    /* target can be empty */
     if (Util.isBlank(target)) {
       return this;
     }
-
-    /* verify that the target contains the scheme, host and port */
     if (!UriUtils.isAbsolute(target)) {
       throw new IllegalArgumentException("target values must be absolute.");
     }
@@ -484,16 +490,11 @@ public final class RequestTemplate implements Serializable {
       target = target.substring(0, target.length() - 1);
     }
     try {
-      /* parse the target */
       URI targetUri = URI.create(target);
-
+      // 追加查询参数
       if (Util.isNotBlank(targetUri.getRawQuery())) {
-        /*
-         * target has a query string, we need to make sure that they are recorded as queries
-         */
         this.extractQueryTemplates(targetUri.getRawQuery(), true);
       }
-
       /* strip the query string */
       this.target =
           targetUri.getScheme() + "://" + targetUri.getRawAuthority() + targetUri.getRawPath();
@@ -514,7 +515,6 @@ public final class RequestTemplate implements Serializable {
    * @return the url
    */
   public String url() {
-
     /* build the fully qualified url with all query parameters */
     StringBuilder url = new StringBuilder(this.path());
     if (!this.queries.isEmpty()) {
@@ -535,14 +535,15 @@ public final class RequestTemplate implements Serializable {
   public String path() {
     /* build the fully qualified url with all query parameters */
     StringBuilder path = new StringBuilder();
+    // 主机
     if (this.target != null) {
       path.append(this.target);
     }
+    // 追加解析后的uri
     if (this.uriTemplate != null) {
-      path.append(this.uriTemplate.toString());
+      path.append(this.uriTemplate);
     }
     if (path.length() == 0) {
-      /* no path indicates the root uri */
       path.append("/");
     }
     return path.toString();
@@ -621,12 +622,11 @@ public final class RequestTemplate implements Serializable {
    */
   private RequestTemplate appendQuery(
       String name, Iterable<String> values, CollectionFormat collectionFormat) {
+    // 值为空，则删除参数
     if (!values.iterator().hasNext()) {
-      /* empty value, clear the existing values */
       this.queries.remove(name);
       return this;
     }
-
     /* create a new query template out of the information here */
     this.queries.compute(
         name,
@@ -992,7 +992,6 @@ public final class RequestTemplate implements Serializable {
    */
   public String queryLine() {
     StringBuilder queryString = new StringBuilder();
-
     if (!this.queries.isEmpty()) {
       Iterator<QueryTemplate> iterator = this.queries.values().iterator();
       while (iterator.hasNext()) {
@@ -1011,16 +1010,15 @@ public final class RequestTemplate implements Serializable {
     if (result.endsWith("&")) {
       result = result.substring(0, result.length() - 1);
     }
-
     if (!result.isEmpty()) {
       result = "?" + result;
     }
-
     return result;
   }
 
   private void extractQueryTemplates(String queryString, boolean append) {
     /* split the query string up into name value pairs */
+    // 提取查询参数Map<参数名，List<参数值>>
     Map<String, List<String>> queryParameters =
         Arrays.stream(queryString.split("&"))
             .map(this::splitQueryParameter)
