@@ -33,7 +33,9 @@ import java.util.Map;
  * 不同RequestTemplateFactory实现
  */
 final class RequestTemplateFactoryResolver {
+  //编码器
   private final Encoder encoder;
+  // queryMap编码器(表单)
   private final QueryMapEncoder queryMapEncoder;
 
   RequestTemplateFactoryResolver(Encoder encoder, QueryMapEncoder queryMapEncoder) {
@@ -43,6 +45,7 @@ final class RequestTemplateFactoryResolver {
 
   /**
    * 获取RequestTemplate.Factory
+   * MethodMetadata
    */
   public RequestTemplate.Factory resolve(Target<?> target, MethodMetadata md) {
     if (!md.formParams().isEmpty() && md.template().bodyTemplate() == null) {
@@ -52,6 +55,7 @@ final class RequestTemplateFactoryResolver {
       // 处理响应体
       return new BuildEncodedTemplateFromArgs(md, encoder, queryMapEncoder, target);
     } else {
+      // 没有表单和请求体
       return new BuildTemplateByResolvingArgs(md, queryMapEncoder, target);
     }
   }
@@ -62,11 +66,11 @@ final class RequestTemplateFactoryResolver {
    *  BuildTemplateByResolvingArgs 解析模板变量
    */
   private static class BuildTemplateByResolvingArgs implements RequestTemplate.Factory {
-
+    protected final Target<?> target;
     private final QueryMapEncoder queryMapEncoder;
     protected final MethodMetadata metadata;
-    protected final Target<?> target;
     /**
+     * expander
      * 通过@Param注释的参数
      */
     private final Map<Integer, Param.Expander> indexToExpander = new LinkedHashMap<Integer, Param.Expander>();
@@ -98,15 +102,17 @@ final class RequestTemplateFactoryResolver {
     public RequestTemplate create(Object[] argv) {
       // 复制RequestTemplate，通过模版创建
       RequestTemplate mutable = RequestTemplate.from(metadata.template());
+      // 生成Request时需要使用target#url
       mutable.feignTarget(target);
-      // 处理URL参数
+      // 处理URL参数: 如果参数存在url对象，使用它只作为host
       if (metadata.urlIndex() != null) {
         int urlIndex = metadata.urlIndex();
         checkArgument(argv[urlIndex] != null, "URI parameter %s was null", urlIndex);
         mutable.target(String.valueOf(argv[urlIndex]));
       }
       // Expander处理参数
-      Map<String, Object> varBuilder = new LinkedHashMap<String, Object>();
+      Map<String, Object> varBuilder = new LinkedHashMap<>();
+      // Map<参数下标,参数名>
       for (Map.Entry<Integer, Collection<String>> entry : metadata.indexToName().entrySet()) {
         int i = entry.getKey();
         Object value = argv[entry.getKey()];
@@ -156,13 +162,13 @@ final class RequestTemplateFactoryResolver {
 
     private Object expandElements(Param.Expander expander, Object value) {
       if (value instanceof Iterable) {
-        return expandIterable(expander, (Iterable) value);
+        return expandIterable(expander, (Iterable<?>) value);
       }
       return expander.expand(value);
     }
 
-    private List<String> expandIterable(Param.Expander expander, Iterable value) {
-      List<String> values = new ArrayList<String>();
+    private List<String> expandIterable(Param.Expander expander, Iterable<?> value) {
+      List<String> values = new ArrayList<>();
       for (Object element : value) {
         if (element != null) {
           values.add(expander.expand(element));
@@ -196,12 +202,11 @@ final class RequestTemplateFactoryResolver {
     private void addQueryMapQueryParameters(
         Map<String, Object> queryMap, RequestTemplate mutable) {
       for (Map.Entry<String, Object> currEntry : queryMap.entrySet()) {
-        Collection<String> values = new ArrayList<String>();
+        // 参数值
+        Collection<String> values = new ArrayList<>();
         Object currValue = currEntry.getValue();
         if (currValue instanceof Iterable<?>) {
-          Iterator<?> iter = ((Iterable<?>) currValue).iterator();
-          while (iter.hasNext()) {
-            Object nextObject = iter.next();
+          for (Object nextObject : (Iterable<?>) currValue) {
             values.add(nextObject == null ? null : UriUtils.encode(nextObject.toString()));
           }
         } else if (currValue instanceof Object[]) {
@@ -213,7 +218,7 @@ final class RequestTemplateFactoryResolver {
             values.add(UriUtils.encode(currValue.toString()));
           }
         }
-        if (values.size() > 0) {
+        if (!values.isEmpty()) {
           mutable.query(UriUtils.encode(currEntry.getKey()), values);
         }
       }

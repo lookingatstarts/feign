@@ -178,17 +178,18 @@ public class Template {
   }
 
   private void parseFragment(String fragment) {
+    // a{b}{c}d -> a {b} {c} d，其中a d是字面量，其他为表达式
     ChunkTokenizer tokenizer = new ChunkTokenizer(fragment);
     while (tokenizer.hasNext()) {
       String chunk = tokenizer.next();
-      if (chunk.startsWith("{")) {
+      if (chunk.startsWith("{")) { // 表达式
         Expression expression = Expressions.create(chunk);
         if (expression == null) {
           this.templateChunks.add(Literal.create(this.encodeLiteral(chunk)));
         } else {
           this.templateChunks.add(expression);
         }
-      } else {
+      } else { // 字面量
         this.templateChunks.add(Literal.create(this.encodeLiteral(chunk)));
       }
     }

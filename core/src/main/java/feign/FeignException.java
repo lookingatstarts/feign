@@ -192,7 +192,7 @@ public class FeignException extends RuntimeException {
 
   public static FeignException errorStatus(
       String methodKey, Response response, Integer maxBodyBytesLength, Integer maxBodyCharsLength) {
-
+    // 响应体
     byte[] body = {};
     try {
       if (response.body() != null) {
@@ -200,14 +200,13 @@ public class FeignException extends RuntimeException {
       }
     } catch (IOException ignored) { // NOPMD
     }
-
     String message =
         new FeignExceptionMessageBuilder()
-            .withResponse(response)
-            .withMethodKey(methodKey)
+            .withResponse(response) // 响应
+            .withMethodKey(methodKey) // 方法
             .withMaxBodyBytesLength(maxBodyBytesLength)
             .withMaxBodyCharsLength(maxBodyCharsLength)
-            .withBody(body)
+            .withBody(body) // 响应体
             .build();
 
     return errorStatus(response.status(), message, response.request(), body, response.headers());
@@ -476,26 +475,24 @@ public class FeignException extends RuntimeException {
     }
 
     public String build() {
-      StringBuilder result = new StringBuilder();
-
       if (maxBodyBytesLength == null) {
         maxBodyBytesLength = MAX_BODY_BYTES_LENGTH;
       }
       if (maxBodyCharsLength == null) {
         maxBodyCharsLength = MAX_BODY_CHARS_LENGTH;
       }
+      StringBuilder result = new StringBuilder();
       if (response.reason() != null) {
         result.append(format("[%d %s]", response.status(), response.reason()));
       } else {
         result.append(format("[%d]", response.status()));
       }
+      // 请求方法 请求url 方法
       result.append(
-          format(
-              " during [%s] to [%s] [%s]",
+          format(" during [%s] to [%s] [%s]",
               response.request().httpMethod(), response.request().url(), methodKey));
-
+      // 响应体
       result.append(format(": [%s]", getBodyAsString(body, response.headers())));
-
       return result.toString();
     }
 
@@ -518,7 +515,6 @@ public class FeignException extends RuntimeException {
       try {
         Reader reader = new InputStreamReader(new ByteArrayInputStream(body), charset);
         CharBuffer result = CharBuffer.allocate(maxBodyCharsLength);
-
         reader.read(result);
         reader.close();
         ((Buffer) result).flip();
@@ -528,19 +524,19 @@ public class FeignException extends RuntimeException {
       }
     }
 
+    /**
+     * 获取字符集
+     */
     private static Charset getResponseCharset(Map<String, Collection<String>> headers) {
-
       Collection<String> strings = headers.get("content-type");
       if (strings == null || strings.isEmpty()) {
         return null;
       }
-
       Pattern pattern = Pattern.compile(".*charset=\"?([^\\s|^;|^\"]+).*", CASE_INSENSITIVE);
       Matcher matcher = pattern.matcher(strings.iterator().next());
       if (!matcher.lookingAt()) {
         return null;
       }
-
       String group = matcher.group(1);
       try {
         if (!Charset.isSupported(group)) {

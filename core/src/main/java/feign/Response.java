@@ -265,7 +265,7 @@ public final class Response implements Closeable {
   }
 
   /**
-   * 响应体
+   * 响应体，需要关闭的资源
    */
   public interface Body extends Closeable {
 

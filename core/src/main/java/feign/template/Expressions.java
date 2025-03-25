@@ -66,44 +66,36 @@ public final class Expressions {
           "(([\\w-\\[\\]$]|%[0-9A-Fa-f]{2})(\\.?([\\w-\\[\\]$]|%[0-9A-Fa-f]{2}))*(:.*|\\*)?)(,(([\\w-\\[\\]$]|%[0-9A-Fa-f]{2})(\\.?([\\w-\\[\\]$]|%[0-9A-Fa-f]{2}))*(:.*|\\*)?))*");
 
   public static Expression create(final String value) {
-
-    /* remove the start and end braces */
+    // 去除{}
     final String expression = stripBraces(value);
     if (expression == null || expression.isEmpty()) {
       throw new IllegalArgumentException("an expression is required.");
     }
-
-    /* Check if the expression is too long */
+    // 表达式长度限制
     if (expression.length() > MAX_EXPRESSION_LENGTH) {
-      throw new IllegalArgumentException(
-          "expression is too long. Max length: " + MAX_EXPRESSION_LENGTH);
+      throw new IllegalArgumentException("expression is too long. Max length: " + MAX_EXPRESSION_LENGTH);
     }
-
-    /* create a new regular expression matcher for the expression */
+    // 表达式：操作符 变量:变量正则表达式
+    String operator = null;
     String variableName = null;
     String variablePattern = null;
-    String operator = null;
     Matcher matcher = EXPRESSION_PATTERN.matcher(value);
     if (matcher.matches()) {
-      /* grab the operator */
+      // operator
       operator = matcher.group(2).trim();
-
-      /* we have a valid variable expression, extract the name from the first group */
+      // 变量名
       variableName = matcher.group(3).trim();
       if (variableName.contains(":")) {
-        /* split on the colon and ensure the size of parts array must be 2 */
+        // 多余的部分被忽略，eg: a:b:c -> :c被丢弃
         String[] parts = variableName.split(":", 2);
         variableName = parts[0];
         variablePattern = parts[1];
       }
-
-      /* look for nested expressions */
+      // 不支持嵌套{}
       if (variableName.contains("{")) {
-        /* nested, literal */
         return null;
       }
     }
-
     /* check for an operator */
     if (PATH_STYLE_OPERATOR.equalsIgnoreCase(operator)) {
       return new PathStyleExpression(variableName, variablePattern);
@@ -243,6 +235,9 @@ public final class Expressions {
     }
   }
 
+  /**
+   * a=1;a=2;a=3
+   */
   public static class PathStyleExpression extends SimpleExpression implements Expander {
 
     public PathStyleExpression(String name, String pattern) {
@@ -262,7 +257,7 @@ public final class Expressions {
     @Override
     public String getValue() {
       if (this.getPattern() != null) {
-        return "{" + this.separator + this.getName() + ":" + this.getName() + "}";
+        return "{" + this.separator + this.getName() + ":" + this.getName()+ "}";
       }
       return "{" + this.separator + this.getName() + "}";
     }

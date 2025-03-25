@@ -17,6 +17,7 @@ package feign;
 
 import feign.InvocationHandlerFactory.MethodHandler;
 import feign.Request.Options;
+import feign.ResponseInterceptor.Chain;
 import feign.Target.HardCodedTarget;
 import feign.codec.Decoder;
 import feign.codec.Encoder;
@@ -208,6 +209,8 @@ public abstract class Feign {
 
     @Override
     public Feign internalBuild() {
+      // 构造响应处理链Chain
+      Chain chain = responseInterceptorChain();
       // 响应处理器
       final ResponseHandler responseHandler =
           new ResponseHandler(
@@ -218,8 +221,7 @@ public abstract class Feign {
               dismiss404, // false
               closeAfterDecode, // true
               decodeVoid,// false
-              // 构造响应处理链 Chain
-              responseInterceptorChain());
+              chain);
       // 处理逻辑都在MethodHandler
       MethodHandler.Factory<Object> methodHandlerFactory =
           new SynchronousMethodHandler.Factory(

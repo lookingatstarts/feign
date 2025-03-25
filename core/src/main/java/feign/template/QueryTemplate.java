@@ -36,8 +36,17 @@ import java.util.stream.StreamSupport;
  */
 public final class QueryTemplate {
 
-  private final List<Template> values;
+  /**
+   * name
+   */
   private final Template name;
+  /**
+   * value
+   */
+  private final List<Template> values;
+  /**
+   * value格式化
+   */
   private final CollectionFormat collectionFormat;
   // values为空时
   private boolean pure = false;
@@ -117,6 +126,7 @@ public final class QueryTemplate {
       Charset charset,
       CollectionFormat collectionFormat,
       boolean decodeSlash) {
+    // 值
     this.values = new CopyOnWriteArrayList<>();
     this.name =
         new Template(
@@ -134,6 +144,7 @@ public final class QueryTemplate {
           new Template(
               value, ExpansionOptions.REQUIRED, EncodingOptions.REQUIRED, !decodeSlash, charset));
     }
+    // 单纯只有name
     if (this.values.isEmpty()) {
       this.pure = true;
     }

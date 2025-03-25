@@ -631,10 +631,10 @@ public final class RequestTemplate implements Serializable {
     this.queries.compute(
         name,
         (key, queryTemplate) -> {
-          if (queryTemplate == null) {
+          if (queryTemplate == null) { // 新增
             return QueryTemplate.create(
                 name, values, this.charset, collectionFormat, this.decodeSlash);
-          } else {
+          } else {// 追加
             return QueryTemplate.append(queryTemplate, values, collectionFormat, this.decodeSlash);
           }
         });

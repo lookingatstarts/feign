@@ -34,6 +34,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * @see feign.ReflectiveFeign.ParseHandlersByName
+ */
 /** Defines what annotations and values are valid on interfaces. */
 public interface Contract {
 

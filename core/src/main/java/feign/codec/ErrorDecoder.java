@@ -81,6 +81,9 @@ public interface ErrorDecoder {
    */
   public Exception decode(String methodKey, Response response);
 
+  /**
+   * 默认errorDecoder
+   */
   public class Default implements ErrorDecoder {
 
     private final RetryAfterDecoder retryAfterDecoder = new RetryAfterDecoder();
@@ -101,6 +104,7 @@ public interface ErrorDecoder {
     public Exception decode(String methodKey, Response response) {
       FeignException exception =
           errorStatus(methodKey, response, maxBodyBytesLength, maxBodyCharsLength);
+      // 获取请求头的retry-after
       Long retryAfter = retryAfterDecoder.apply(firstOrNull(response.headers(), RETRY_AFTER));
       if (retryAfter != null) {
         return new RetryableException(

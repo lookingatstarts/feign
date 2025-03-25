@@ -64,21 +64,23 @@ public class ResponseHandler {
   }
 
   /**
-   * 解码响应
+   * 反序列响应
    * 1、如果日志级别不为none,将response数据封装到ByteArrayBody，并关闭response
    * 2、chain解码链
    */
   public Object handleResponse(
-      String configKey, Response response, Type returnType, long elapsedTime) throws Exception {
+      String configKey, Response response,
+      Type returnType, long elapsedTime) throws Exception {
     try {
       // 1、如果log级别不为NONE,会读取数据封装到ByteArrayBody中并关闭Body
       response = logAndReBufferResponseIfNeeded(configKey, response, elapsedTime);
-      // 2、调用Chain来处理，可以通过新增interceptor来捕获异常
+      // 2、调用Chain来处理，可以通过新增interceptor来捕获异常：decoder errorDecoder(响应码不在200-300之间时)
       InvocationContext invocationContext = new InvocationContext(
               configKey,
               decoder, errorDecoder,
               dismiss404, closeAfterDecode,
               decodeVoid, response, returnType);
+      // 通过责任链处理
       return executionChain.next(invocationContext);
     } catch (final IOException e) {
       // 输出IO出错日志

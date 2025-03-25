@@ -31,8 +31,11 @@ public class InvocationContext {
   private final Decoder decoder;
   // 错误解码器
   private final ErrorDecoder errorDecoder;
+  // 默认false
   private final boolean dismiss404;
+  // 默认true
   private final boolean closeAfterDecode;
+  // 默认false
   private final boolean decodeVoid;
   private final Response response;
   private final Type returnType;
