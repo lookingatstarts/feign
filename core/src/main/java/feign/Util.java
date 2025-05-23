@@ -252,6 +252,9 @@ public class Util {
     }
   }
 
+  /**
+   * 会自动关闭流
+   */
   /** Adapted from {@code com.google.common.io.ByteStreams.toByteArray()}. */
   public static byte[] toByteArray(InputStream in) throws IOException {
     checkNotNull(in, "in");

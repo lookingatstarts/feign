@@ -35,15 +35,23 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** Origin exception type for all Http Apis. */
+/**
+ * feign异常
+ *
+ * Origin exception type for all Http Apis.
+ * */
 public class FeignException extends RuntimeException {
 
   private static final String EXCEPTION_MESSAGE_TEMPLATE_NULL_REQUEST =
       "request should not be null";
   private static final long serialVersionUID = 0;
+  // 响应码
   private final int status;
+  // 响应体
   private byte[] responseBody;
+  // 响应头
   private Map<String, Collection<String>> responseHeaders;
+  // 请求
   private final Request request;
 
   protected FeignException(int status, String message, Throwable cause) {
@@ -200,6 +208,7 @@ public class FeignException extends RuntimeException {
       }
     } catch (IOException ignored) { // NOPMD
     }
+    // 异常message
     String message =
         new FeignExceptionMessageBuilder()
             .withResponse(response) // 响应
@@ -208,7 +217,6 @@ public class FeignException extends RuntimeException {
             .withMaxBodyCharsLength(maxBodyCharsLength)
             .withBody(body) // 响应体
             .build();
-
     return errorStatus(response.status(), message, response.request(), body, response.headers());
   }
 
@@ -218,15 +226,21 @@ public class FeignException extends RuntimeException {
       Request request,
       byte[] body,
       Map<String, Collection<String>> headers) {
+    // 客户端异常
     if (isClientError(status)) {
       return clientErrorStatus(status, message, request, body, headers);
     }
+    // 服务端异常
     if (isServerError(status)) {
       return serverErrorStatus(status, message, request, body, headers);
     }
+    // 其他异常
     return new FeignException(status, message, request, body, headers);
   }
 
+  /**
+   * 400 <= and < 500 客户端错误
+   */
   private static boolean isClientError(int status) {
     return status >= 400 && status < 500;
   }
@@ -302,6 +316,9 @@ public class FeignException extends RuntimeException {
         request);
   }
 
+  /**
+   * 客户端异常父类
+   */
   public static class FeignClientException extends FeignException {
     public FeignClientException(
         int status,
@@ -313,6 +330,7 @@ public class FeignException extends RuntimeException {
     }
   }
 
+  // 400
   public static class BadRequest extends FeignClientException {
     public BadRequest(
         String message, Request request, byte[] body, Map<String, Collection<String>> headers) {
@@ -320,6 +338,7 @@ public class FeignException extends RuntimeException {
     }
   }
 
+  // 401
   public static class Unauthorized extends FeignClientException {
     public Unauthorized(
         String message, Request request, byte[] body, Map<String, Collection<String>> headers) {
@@ -327,6 +346,7 @@ public class FeignException extends RuntimeException {
     }
   }
 
+  // 403：
   public static class Forbidden extends FeignClientException {
     public Forbidden(
         String message, Request request, byte[] body, Map<String, Collection<String>> headers) {
@@ -334,6 +354,7 @@ public class FeignException extends RuntimeException {
     }
   }
 
+  // 404：请求不存在
   public static class NotFound extends FeignClientException {
     public NotFound(
         String message, Request request, byte[] body, Map<String, Collection<String>> headers) {
@@ -341,6 +362,7 @@ public class FeignException extends RuntimeException {
     }
   }
 
+  // 405: 请求方式不支持
   public static class MethodNotAllowed extends FeignClientException {
     public MethodNotAllowed(
         String message, Request request, byte[] body, Map<String, Collection<String>> headers) {
@@ -438,12 +460,11 @@ public class FeignException extends RuntimeException {
   }
 
   private static class FeignExceptionMessageBuilder {
-
+    // 输出异常时，最大输出的body长度
     private static final int MAX_BODY_BYTES_LENGTH = 400;
     private static final int MAX_BODY_CHARS_LENGTH = 200;
 
     private Response response;
-
     private byte[] body;
     private String methodKey;
     private Integer maxBodyBytesLength;
@@ -474,6 +495,9 @@ public class FeignException extends RuntimeException {
       return this;
     }
 
+    /**
+     * 构造异常信息
+     */
     public String build() {
       if (maxBodyBytesLength == null) {
         maxBodyBytesLength = MAX_BODY_BYTES_LENGTH;
@@ -482,6 +506,7 @@ public class FeignException extends RuntimeException {
         maxBodyCharsLength = MAX_BODY_CHARS_LENGTH;
       }
       StringBuilder result = new StringBuilder();
+      // status reason
       if (response.reason() != null) {
         result.append(format("[%d %s]", response.status(), response.reason()));
       } else {
@@ -525,6 +550,7 @@ public class FeignException extends RuntimeException {
     }
 
     /**
+     * 从content-type响应头获取字符集
      * 获取字符集
      */
     private static Charset getResponseCharset(Map<String, Collection<String>> headers) {

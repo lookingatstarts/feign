@@ -67,6 +67,8 @@ import java.util.Map;
 public interface ErrorDecoder {
 
   /**
+   * http接口请求失败，错误码 -> 异常
+   *
    * Implement this method in order to decode an HTTP {@link Response} when {@link
    * Response#status()} is not in the 2xx range. Please raise application-specific exceptions where
    * possible. If your exception is retryable, wrap or subclass {@link RetryableException}

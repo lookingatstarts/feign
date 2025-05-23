@@ -85,7 +85,7 @@ public class InvocationContext {
       final boolean shouldDecodeResponseBody =
           (response.status() >= 200 && response.status() < 300)
               || (response.status() == 404 && dismiss404 && !isVoidType(returnType));
-      // 接口请求失败，ErrorDecode解码异常
+      // 接口请求失败，ErrorDecode解码异常，
       if (!shouldDecodeResponseBody) {
         throw decodeError(configKey, response);
       }
@@ -122,10 +122,11 @@ public class InvocationContext {
       return response;
     }
     try {
-      // Util.toByteArray会关闭流
+      // Util.toByteArray会关闭inputStream流
       final byte[] bodyData = Util.toByteArray(response.body().asInputStream());
       return response.toBuilder().body(bodyData).build();
     } finally {
+      // 关闭流：response.body
       ensureClosed(response.body());
     }
   }

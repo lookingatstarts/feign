@@ -31,10 +31,19 @@ public interface ResponseInterceptor {
         intercept(ic, nextContext -> nextInterceptor.intercept(nextContext, chain));
   }
 
+  /**
+   * responseInterceptorA.apply(ChainB)
+   * 返回一个新的Chain,先执行A的intercept，如果请求InvoiceContext继续往下传，就调用chainB#next
+   */
+  default Chain apply(Chain chain) {
+    return request -> intercept(request, chain);
+  }
+
   /***
    * 责任链设计模式
    */
   interface Chain {
+    // 默认实现
     Chain DEFAULT = InvocationContext::proceed;
 
     /**
@@ -44,13 +53,5 @@ public interface ResponseInterceptor {
      * @return the response
      */
     Object next(InvocationContext context) throws Exception;
-  }
-
-  /**
-   * responseInterceptorA.apply(ChainB)
-   * 返回一个新的Chain,先执行A的intercept，如果请求InvoiceContext继续往下传，就调用chainB#next
-   */
-  default Chain apply(Chain chain) {
-    return request -> intercept(request, chain);
   }
 }

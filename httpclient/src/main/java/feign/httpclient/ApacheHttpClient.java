@@ -161,6 +161,9 @@ public final class ApacheHttpClient implements Client {
     return contentType;
   }
 
+  /**
+   * httpResponse -> Response
+   */
   Response toFeignResponse(HttpResponse httpResponse, Request request) throws IOException {
     StatusLine statusLine = httpResponse.getStatusLine();
     int statusCode = statusLine.getStatusCode();
@@ -181,7 +184,7 @@ public final class ApacheHttpClient implements Client {
         .reason(reason)
         .headers(headers)
         .request(request)
-        .body(toFeignBody(httpResponse))
+        .body(toFeignBody(httpResponse)) // 转Response#Body
         .build();
   }
 
