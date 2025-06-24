@@ -96,12 +96,19 @@ public abstract class Logger {
     log(configKey, "---> RETRYING");
   }
 
+  /**
+   * @param elapsedTime 耗时
+   */
   protected Response logAndRebufferResponse(
       String configKey, Level logLevel, Response response, long elapsedTime) throws IOException {
+    // http协议版本
     String protocolVersion = resolveProtocolVersion(response.protocolVersion());
+    // reason
     String reason = (response.reason() != null && logLevel.compareTo(Level.NONE) > 0) ? " " + response.reason() : "";
     int status = response.status();
+    //eg: http1.1 200 ok (100ms)
     log(configKey, "<--- %s %s%s (%sms)", protocolVersion, status, reason, elapsedTime);
+    // 输出响应头
     if (logLevel.ordinal() >= Level.HEADERS.ordinal()) {
       for (String field : response.headers().keySet()) {
         if (shouldLogResponseHeader(field)) {
@@ -110,6 +117,7 @@ public abstract class Logger {
           }
         }
       }
+      // 输出body
       int bodyLength = 0;
       if (response.body() != null && !(status == 204 || status == 205)) {
         // HTTP 204 No Content "...response MUST NOT include a message-body"
@@ -157,6 +165,9 @@ public abstract class Logger {
     return "UNKNOWN";
   }
 
+  /**
+   * 日志级别：none不输出 basic基础信息 headers输出请求/响应头 full输出body
+   */
   /** Controls the level of logging. */
   public enum Level {
     /** No logging. */

@@ -37,8 +37,7 @@ final class SynchronousMethodHandler implements MethodHandler {
       MethodHandlerConfiguration configuration,
       Client client,
       ResponseHandler responseHandler) {
-    this.configuration =
-        checkNotNull(configuration, "methodHandlerConfiguration");
+    this.configuration = checkNotNull(configuration, "methodHandlerConfiguration");
     this.client = checkNotNull(client, "client for %s", configuration.getTarget());
     this.responseHandler = responseHandler;
   }
@@ -82,9 +81,8 @@ final class SynchronousMethodHandler implements MethodHandler {
         }
         // 输出重试日志
         if (configuration.getLogLevel() != Logger.Level.NONE) {
-          configuration.getLogger().logRetry(
-                  configuration.getMetadata().configKey(),
-                  configuration.getLogLevel());
+          configuration.getLogger()
+                  .logRetry(configuration.getMetadata().configKey(), configuration.getLogLevel());
         }
       }
     }
@@ -200,8 +198,7 @@ final class SynchronousMethodHandler implements MethodHandler {
       this.logger = checkNotNull(logger, "logger");
       this.logLevel = checkNotNull(logLevel, "logLevel");
       this.propagationPolicy = propagationPolicy;
-      this.requestTemplateFactoryResolver =
-          checkNotNull(requestTemplateFactoryResolver, "requestTemplateFactoryResolver");
+      this.requestTemplateFactoryResolver = checkNotNull(requestTemplateFactoryResolver, "requestTemplateFactoryResolver");
       this.options = checkNotNull(options, "options");
     }
 

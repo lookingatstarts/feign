@@ -62,13 +62,18 @@ public final class Response implements Closeable {
   }
 
   public static final class Builder {
+
     private static final ProtocolVersion DEFAULT_PROTOCOL_VERSION = ProtocolVersion.HTTP_1_1;
     int status;
     String reason;
     Map<String, Collection<String>> headers;
+    /**
+     * 响应体实现
+     * ByteArrayBody
+     * InputStreamBody
+     */
     Body body;
     Request request;
-    private RequestTemplate requestTemplate;
     private ProtocolVersion protocolVersion = DEFAULT_PROTOCOL_VERSION;
 
     Builder() {}

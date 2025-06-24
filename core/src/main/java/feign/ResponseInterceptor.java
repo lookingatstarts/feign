@@ -27,8 +27,8 @@ public interface ResponseInterceptor {
    * 返回一个新的对象C,C调用intercept时，先执行A，在执行B
    */
   default ResponseInterceptor andThen(ResponseInterceptor nextInterceptor) {
-    return (ic, chain) ->
-        intercept(ic, nextContext -> nextInterceptor.intercept(nextContext, chain));
+    return (ic, chain)
+            -> intercept(ic, nextContext -> nextInterceptor.intercept(nextContext, chain));
   }
 
   /**
@@ -43,6 +43,7 @@ public interface ResponseInterceptor {
    * 责任链设计模式
    */
   interface Chain {
+
     // 默认实现
     Chain DEFAULT = InvocationContext::proceed;
 

@@ -22,9 +22,14 @@ import java.util.Map;
 /** Controls reflective method dispatch. */
 public interface InvocationHandlerFactory {
 
+  /**
+   * @param target feign接口
+   * @param dispatch 方法-方法处理器映射表
+   */
   InvocationHandler create(Target target, Map<Method, MethodHandler> dispatch);
 
   /**
+   * 方法处理器
    * Like {@link InvocationHandler#invoke(Object, java.lang.reflect.Method, Object[])}, except for a
    * single method.
    */
@@ -35,6 +40,9 @@ public interface InvocationHandlerFactory {
      */
     Object invoke(Object[] argv) throws Throwable;
 
+    /**
+     * 工厂模式
+     */
     interface Factory<C> {
       MethodHandler create(Target<?> target, MethodMetadata md, C requestContext);
     }

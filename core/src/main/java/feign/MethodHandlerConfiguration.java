@@ -19,24 +19,19 @@ import static feign.Util.checkNotNull;
 
 import java.util.List;
 
+/**
+ * 方法处理器配置类
+ */
 public class MethodHandlerConfiguration {
 
   private final MethodMetadata metadata;
-
   private final Target<?> target;
-
   private final Retryer retryer;
-
   private final List<RequestInterceptor> requestInterceptors;
-
   private final Logger logger;
-
   private final Logger.Level logLevel;
-
   private final RequestTemplate.Factory requestTemplateFactory;
-
   private final Request.Options options;
-
   private final ExceptionPropagationPolicy propagationPolicy;
 
   public MethodMetadata getMetadata() {

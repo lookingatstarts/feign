@@ -27,6 +27,9 @@ import java.lang.reflect.WildcardType;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * 反射方式实现
+ */
 public class ReflectiveFeign<C> extends Feign {
 
   /**
@@ -57,11 +60,10 @@ public class ReflectiveFeign<C> extends Feign {
   @SuppressWarnings("unchecked")
   public <T> T newInstance(Target<T> target, C requestContext) {
     TargetSpecificationVerifier.verify(target);
-    // 创建Method-> MethodHandler转发表
+    // 创建Method -> MethodHandler转发表
     Map<Method, MethodHandler> methodToHandler = targetToHandlersByName.apply(target, requestContext);
     InvocationHandler handler = factory.create(target, methodToHandler);
-    T proxy = (T) Proxy.newProxyInstance(
-                target.type().getClassLoader(), new Class<?>[] {target.type()}, handler);
+    T proxy = (T) Proxy.newProxyInstance(target.type().getClassLoader(), new Class<?>[] {target.type()}, handler);
     for (MethodHandler methodHandler : methodToHandler.values()) {
       if (methodHandler instanceof DefaultMethodHandler) {
         ((DefaultMethodHandler) methodHandler).bindTo(proxy);
@@ -74,7 +76,7 @@ public class ReflectiveFeign<C> extends Feign {
    * Proxy的InvocationHandler，找到method对应MethodHandler进行处理
    */
   static class FeignInvocationHandler implements InvocationHandler {
-
+    // 用于创建Request
     private final Target<?> target;
     // 方法转发表
     private final Map<Method, MethodHandler> dispatch;
@@ -84,12 +86,14 @@ public class ReflectiveFeign<C> extends Feign {
       this.dispatch = checkNotNull(dispatch, "dispatch for %s", target);
     }
 
+    /**
+     * InvocationHandler
+     */
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
       if ("equals".equals(method.getName())) {
         try {
-          Object otherHandler =
-              args.length > 0 && args[0] != null ? Proxy.getInvocationHandler(args[0]) : null;
+          Object otherHandler = args.length > 0 && args[0] != null ? Proxy.getInvocationHandler(args[0]) : null;
           return equals(otherHandler);
         } catch (IllegalArgumentException e) {
           return false;
@@ -127,6 +131,7 @@ public class ReflectiveFeign<C> extends Feign {
   }
 
   /**
+   * Method -> MethodHandler
    * 用于生成方法转发表
    */
   private static final class ParseHandlersByName<C> {
@@ -196,21 +201,18 @@ public class ReflectiveFeign<C> extends Feign {
       }
       for (final Method m : type.getMethods()) {
         final Class<?> retType = m.getReturnType();
-
         if (!CompletableFuture.class.isAssignableFrom(retType)) {
           continue; // synchronous case
         }
         if (retType != CompletableFuture.class) {
           throw new IllegalArgumentException(
-              "Method return type is not CompleteableFuture: "
-                  + getFullMethodName(type, retType, m));
+              "Method return type is not CompleteableFuture: " + getFullMethodName(type, retType, m));
         }
         final Type genRetType = m.getGenericReturnType();
         if (!(genRetType instanceof ParameterizedType)) {
           throw new IllegalArgumentException(
               "Method return type is not parameterized: " + getFullMethodName(type, genRetType, m));
         }
-
         if (((ParameterizedType) genRetType).getActualTypeArguments()[0] instanceof WildcardType) {
           throw new IllegalArgumentException(
               "Wildcards are not supported for return-type parameters: "
