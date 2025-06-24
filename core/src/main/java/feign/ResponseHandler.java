@@ -67,8 +67,7 @@ public class ResponseHandler {
    * 2、chain解码链
    */
   public Object handleResponse(
-      String configKey, Response response,
-      Type returnType, long elapsedTime) throws Exception {
+      String configKey, Response response, Type returnType, long elapsedTime) throws Exception {
     try {
       // -----输出日志-------
       // 1、如果log级别不为NONE,会读取数据封装到ByteArrayBody中并关闭Body

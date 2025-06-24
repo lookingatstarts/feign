@@ -25,27 +25,41 @@ import java.util.stream.Collectors;
 public final class MethodMetadata implements Serializable {
 
   private static final long serialVersionUID = 1L;
+  // 唯一标识一个类的方法对应的请求
   private String configKey;
+  // 返回类型
   private transient Type returnType;
+  // url索引
   private Integer urlIndex;
+  // body索引
   private Integer bodyIndex;
+  // headMap索引
   private Integer headerMapIndex;
+  // queryMap索引
   private Integer queryMapIndex;
+  // queryMap编码器
   private QueryMapEncoder queryMapEncoder;
   private boolean alwaysEncodeBody;
   private transient Type bodyType;
   private final RequestTemplate template = new RequestTemplate();
   // 表单数据
   private final List<String> formParams = new ArrayList<String>();
+  // 参数名
   private final Map<Integer, Collection<String>> indexToName =
       new LinkedHashMap<Integer, Collection<String>>();
+  // expander类
   private final Map<Integer, Class<? extends Expander>> indexToExpanderClass =
       new LinkedHashMap<Integer, Class<? extends Expander>>();
   private final Map<Integer, Boolean> indexToEncoded = new LinkedHashMap<Integer, Boolean>();
+  // 参数对应的Expander
   private transient Map<Integer, Expander> indexToExpander;
+  // 需要忽略的参数
   private BitSet parameterToIgnore = new BitSet();
+  // 方法是否被忽略
   private boolean ignored;
+  // 接口类
   private transient Class<?> targetType;
+  // 方法
   private transient Method method;
   private final transient List<String> warnings = new ArrayList<>();
 

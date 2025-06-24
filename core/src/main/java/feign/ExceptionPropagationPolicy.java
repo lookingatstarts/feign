@@ -15,7 +15,16 @@
  */
 package feign;
 
+/**
+ * 异常传播策略
+ */
 public enum ExceptionPropagationPolicy {
+  /**
+   * RetryableException
+   */
   NONE,
+  /**
+   * RetryableException#cause
+   */
   UNWRAP
 }

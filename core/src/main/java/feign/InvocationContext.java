@@ -22,22 +22,48 @@ import feign.codec.DecodeException;
 import feign.codec.Decoder;
 import feign.codec.ErrorDecoder;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
+/**
+ * 调用上下文
+ */
 public class InvocationContext {
+
   private static final long MAX_RESPONSE_BUFFER_SIZE = 8192L;
+
+  /**
+   * @see Feign#configKey(Class, Method)
+   * 唯一标识一个feign接口的方法
+   */
   private final String configKey;
-  // 解码器
+  /**
+   * 解码器
+   */
   private final Decoder decoder;
-  // 错误解码器
+  /**
+   * 错误解码器
+   */
   private final ErrorDecoder errorDecoder;
-  // 默认false
+  /**
+   * 默认false
+   */
   private final boolean dismiss404;
-  // 默认true
+  /**
+   * 默认true
+   */
   private final boolean closeAfterDecode;
-  // 默认false
+  /**
+   * 默认false
+   */
   private final boolean decodeVoid;
+  /**
+   * 响应
+   */
   private final Response response;
+  /**
+   * 返回类型
+   */
   private final Type returnType;
 
   InvocationContext(
@@ -72,8 +98,11 @@ public class InvocationContext {
   }
 
   /**
+   * 解析响应
    * 没有配置ResponseInterceptor，或者配置的ResponseInterceptor处理不了
    * 如果Chain使用的方式为Default，就会调用proceed方法
+   *
+   * 1、Chain接口默认实现
    */
   public Object proceed() throws Exception {
     if (returnType == Response.class) {
@@ -81,15 +110,15 @@ public class InvocationContext {
       return disconnectResponseBodyIfNeeded(response);
     }
     try {
-      // 是否反序列化响应体
+      boolean requestFail = response.status() >= 200 && response.status() < 300;
+      // 404&&feign接口方法返回值不为void
       final boolean shouldDecodeResponseBody =
-          (response.status() >= 200 && response.status() < 300)
-              || (response.status() == 404 && dismiss404 && !isVoidType(returnType));
+          requestFail || (response.status() == 404 && dismiss404 && !isVoidType(returnType));
       // 接口请求失败，ErrorDecode解码异常，
       if (!shouldDecodeResponseBody) {
         throw decodeError(configKey, response);
       }
-      // 如果返回为void是否反序列化
+      // 如果返回为void是否反序列化，返回null
       if (isVoidType(returnType) && !decodeVoid) {
         ensureClosed(response.body());
         return null;
@@ -133,6 +162,7 @@ public class InvocationContext {
 
   /**
    * 解析失败抛出异常
+   * 反序列化
    */
   private Object decode(Response response, Type returnType) {
     try {

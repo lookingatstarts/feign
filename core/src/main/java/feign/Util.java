@@ -176,11 +176,14 @@ public class Util {
     return values != null ? values : Collections.emptyList();
   }
 
+  /**
+   * 关闭流
+   */
   public static void ensureClosed(Closeable closeable) {
     if (closeable != null) {
       try {
         closeable.close();
-      } catch (IOException ignored) { // NOPMD
+      } catch (IOException ignored) {
       }
     }
   }
@@ -216,6 +219,9 @@ public class Util {
 
   private static final Map<Class<?>, Supplier<Object>> EMPTIES;
 
+  /**
+   * 类型：对应的空值
+   */
   static {
     final Map<Class<?>, Supplier<Object>> empties = new LinkedHashMap<>();
     empties.put(boolean.class, () -> false);

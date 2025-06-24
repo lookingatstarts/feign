@@ -57,13 +57,14 @@ import org.apache.http.util.EntityUtils;
  * GitHub github = Feign.builder().client(new ApacheHttpClient()).target(GitHub.class,
  * "https://api.github.com");
  */
-/*
- * Based on Square, Inc's Retrofit ApacheClient implementation
+
+/**
+ * apache http client的实现方式
  */
 public final class ApacheHttpClient implements Client {
 
   private static final String ACCEPT_HEADER_NAME = "Accept";
-
+  // 连接池
   private final HttpClient client;
 
   public ApacheHttpClient() {

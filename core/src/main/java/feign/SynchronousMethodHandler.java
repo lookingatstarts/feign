@@ -64,14 +64,12 @@ final class SynchronousMethodHandler implements MethodHandler {
       try {
         // 4、执行请求，并序列化响应体
         return executeAndDecode(template, options);
-      } catch (RetryableException e) {
-        // ----------只有抛出RetryException异常才能重试--------------
+      } catch (RetryableException e) {// 抛出RetryableException才会重试
         try {
           // 决定抛出异常还是重试
           retryer.continueOrPropagate(e);
         } catch (RetryableException th) {
-          // 不在重试则抛出异常
-          Throwable cause = th.getCause();
+          Throwable cause = th.getCause(); // 不在重试则抛出异常
           // 抛出cause还是RetryableException
           if (configuration.getPropagationPolicy() == UNWRAP && cause != null) {
             throw cause;
@@ -81,8 +79,7 @@ final class SynchronousMethodHandler implements MethodHandler {
         }
         // 输出重试日志
         if (configuration.getLogLevel() != Logger.Level.NONE) {
-          configuration.getLogger()
-                  .logRetry(configuration.getMetadata().configKey(), configuration.getLogLevel());
+          configuration.getLogger().logRetry(configuration.getMetadata().configKey(), configuration.getLogLevel());
         }
       }
     }
@@ -98,11 +95,10 @@ final class SynchronousMethodHandler implements MethodHandler {
   Object executeAndDecode(RequestTemplate template, Options options) throws Throwable {
     // 1、构造请求Request
     Request request = targetRequest(template);
-    Logger.Level logLevel = configuration.getLogLevel();
     // 2、输出Request日志: 按http协议格式输出
+    Logger.Level logLevel = configuration.getLogLevel();
     if (logLevel != Logger.Level.NONE) {
-      configuration.getLogger().logRequest(
-              configuration.getMetadata().configKey(), logLevel, request);
+      configuration.getLogger().logRequest(configuration.getMetadata().configKey(), logLevel, request);
     }
     // 响应体
     Response response;
@@ -110,18 +106,14 @@ final class SynchronousMethodHandler implements MethodHandler {
     try {
       // 3、通过client执行请求
       response = client.execute(request, options);
-      response = response.toBuilder()
-          .request(request)
-          .requestTemplate(template).build();
+      response = response.toBuilder().request(request).requestTemplate(template).build();
     } catch (IOException e) {
       // 4、捕获异常，输出错误日志
       if (logLevel != Logger.Level.NONE) {
         configuration.getLogger().logIOException(
-                configuration.getMetadata().configKey(),
-                logLevel, e, elapsedTime(start));
+                configuration.getMetadata().configKey(), logLevel, e, elapsedTime(start));
       }
       // 只有RetryableException异常才会重试，仅针对IOException封装成RetryableException
-      // 让Retry进行重试
       throw errorExecuting(request, e);
     }
     long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
@@ -135,6 +127,11 @@ final class SynchronousMethodHandler implements MethodHandler {
     return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
   }
 
+
+  /**
+   * 1、执行RequestInterceptor#apply
+   * 2、Target#apply生成Request对象
+   */
  private Request targetRequest(RequestTemplate template) {
     // 执行RequestInterceptor拦截逻辑
     for (RequestInterceptor interceptor : configuration.getRequestInterceptors()) {

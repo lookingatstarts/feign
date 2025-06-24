@@ -29,6 +29,7 @@ import java.io.Reader;
 import java.lang.reflect.Type;
 
 /**
+ * fastjson反序列化
  * @author changjin wei(魏昌进)
  */
 public class Fastjson2Decoder implements Decoder {
@@ -45,7 +46,9 @@ public class Fastjson2Decoder implements Decoder {
 
   @Override
   public Object decode(Response response, Type type) throws IOException, FeignException {
-    if (response.status() == 404 || response.status() == 204) return Util.emptyValueOf(type);
+    if (response.status() == 404 || response.status() == 204){
+      return Util.emptyValueOf(type);
+    }
     if (response.body() == null){
       return null;
     }

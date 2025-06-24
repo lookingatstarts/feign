@@ -206,7 +206,7 @@ public class FeignException extends RuntimeException {
       if (response.body() != null) {
         body = Util.toByteArray(response.body().asInputStream());
       }
-    } catch (IOException ignored) { // NOPMD
+    } catch (IOException ignored) {
     }
     // 异常message
     String message =
@@ -217,6 +217,7 @@ public class FeignException extends RuntimeException {
             .withMaxBodyCharsLength(maxBodyCharsLength)
             .withBody(body) // 响应体
             .build();
+    // 根据响应码返回对应的xxxFeignException
     return errorStatus(response.status(), message, response.request(), body, response.headers());
   }
 
@@ -305,6 +306,9 @@ public class FeignException extends RuntimeException {
     }
   }
 
+  /**
+   * 执行异常
+   */
   static FeignException errorExecuting(Request request, IOException cause) {
     final Long nonRetryable = null;
     return new RetryableException(

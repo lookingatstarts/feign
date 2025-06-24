@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
+ * 在构造客户端时，可以增强部分组件
  * Capabilities expose core feign artifacts to implementations so parts of core can be customized
  * around the time the client being built.
  *
@@ -35,20 +36,15 @@ import java.util.List;
  */
 public interface Capability {
 
-  static Object enrich(
-      Object componentToEnrich, Class<?> capabilityToEnrich, List<Capability> capabilities) {
+  /**
+   * @param componentToEnrich 被增强的对象
+   * @param capabilityToEnrich 被增强对象的类型
+   * @param capabilities 增强类
+   */
+  static Object enrich(Object componentToEnrich,
+                       Class<?> capabilityToEnrich,
+                       List<Capability> capabilities) {
     return capabilities.stream()
-        // invoke each individual capability and feed the result to the next one.
-        // This is equivalent to:
-        // Capability cap1 = ...;
-        // Capability cap2 = ...;
-        // Capability cap2 = ...;
-        // Contract contract = ...;
-        // Contract contract1 = cap1.enrich(contract);
-        // Contract contract2 = cap2.enrich(contract1);
-        // Contract contract3 = cap3.enrich(contract2);
-        // or in a more compact version
-        // Contract enrichedContract = cap3.enrich(cap2.enrich(cap1.enrich(contract)));
         .reduce(
             componentToEnrich,
             (target, capability) -> invoke(target, capability, capabilityToEnrich),
@@ -57,22 +53,25 @@ public interface Capability {
 
   static Object invoke(Object target, Capability capability, Class<?> capabilityToEnrich) {
     return Arrays.stream(capability.getClass().getMethods())
+        // 找到增强的方法
         .filter(method -> method.getName().equals("enrich"))
         .filter(method -> method.getReturnType().isAssignableFrom(capabilityToEnrich))
         .findFirst()
         .map(
             method -> {
               try {
+                // 增强对象
                 return method.invoke(capability, target);
-              } catch (IllegalAccessException
-                  | IllegalArgumentException
-                  | InvocationTargetException e) {
+              } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                 throw new RuntimeException("Unable to enrich " + target, e);
               }
             })
         .orElse(target);
   }
 
+  /**
+   * 增强方法
+   */
   default Client enrich(Client client) {
     return client;
   }

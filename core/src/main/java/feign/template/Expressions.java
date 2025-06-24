@@ -118,6 +118,7 @@ public final class Expressions {
   }
 
   /**
+   * a,b,c
    * Expression that adheres to Simple String Expansion as outlined in <a
    * href="https://tools.ietf.org/html/rfc6570#section-3.2.2>Simple String Expansion (Level 1)</a>
    */

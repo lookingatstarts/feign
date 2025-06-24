@@ -19,16 +19,20 @@ public interface ResponseInterceptor {
 
   /**
    * 如果要将InvocationContext往下传，就必须调用Chain.next
+   * 1、如果不想别的interceptor执行了，就不用chain.next(InvocationContext)
    */
   Object intercept(InvocationContext invocationContext, Chain chain) throws Exception;
 
   /**
-   * A.andThen(B)
+   *ResponseInterceptor c = A.andThen(B)
    * 返回一个新的对象C,C调用intercept时，先执行A，在执行B
    */
   default ResponseInterceptor andThen(ResponseInterceptor nextInterceptor) {
-    return (ic, chain)
-            -> intercept(ic, nextContext -> nextInterceptor.intercept(nextContext, chain));
+    return (ic, chain) ->{
+      // 将B封装成Chain
+       Chain newChain = nextContext -> nextInterceptor.intercept(nextContext, chain);
+     return this.intercept(ic, newChain);
+    };
   }
 
   /**
@@ -36,7 +40,7 @@ public interface ResponseInterceptor {
    * 返回一个新的Chain,先执行A的intercept，如果请求InvoiceContext继续往下传，就调用chainB#next
    */
   default Chain apply(Chain chain) {
-    return request -> intercept(request, chain);
+    return invocationContext -> this.intercept(invocationContext, chain);
   }
 
   /***
@@ -47,12 +51,6 @@ public interface ResponseInterceptor {
     // 默认实现
     Chain DEFAULT = InvocationContext::proceed;
 
-    /**
-     * Delegate to the rest of the chain to execute the request.
-     *
-     * @param context the request to execute the {@link Chain} .
-     * @return the response
-     */
     Object next(InvocationContext context) throws Exception;
   }
 }

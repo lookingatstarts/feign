@@ -69,7 +69,6 @@ public abstract class Logger {
     String protocolVersion = resolveProtocolVersion(request.protocolVersion());
     log(configKey, "--->\n %s %s %s", request.httpMethod().name(), request.url(), protocolVersion);
     if (logLevel.ordinal() >= Level.HEADERS.ordinal()) {
-
       for (String field : request.headers().keySet()) {
         if (shouldLogRequestHeader(field)) {
           for (String value : valuesOrEmpty(request.headers(), field)) {
@@ -77,7 +76,6 @@ public abstract class Logger {
           }
         }
       }
-
       int bodyLength = 0;
       if (request.body() != null) {
         bodyLength = request.length();

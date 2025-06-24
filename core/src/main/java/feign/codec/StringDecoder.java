@@ -22,6 +22,9 @@ import feign.Util;
 import java.io.IOException;
 import java.lang.reflect.Type;
 
+/**
+ * 转String
+ */
 public class StringDecoder implements Decoder {
 
   @Override

@@ -41,14 +41,15 @@ public final class Types {
     // No instances.
   }
 
+  /**
+   * 处理泛型
+   */
   public static Class<?> getRawType(Type type) {
     if (type instanceof Class<?>) {
-      // Type is a normal class.
       return (Class<?>) type;
 
-    } else if (type instanceof ParameterizedType) {
+    } else if (type instanceof ParameterizedType) {// List<AObject>
       ParameterizedType parameterizedType = (ParameterizedType) type;
-
       // I'm not exactly sure why getRawType() returns Type instead of Class. Neal isn't either but
       // suspects some pathological case related to nested classes exists.
       Type rawType = parameterizedType.getRawType();
@@ -56,19 +57,16 @@ public final class Types {
         throw new IllegalArgumentException();
       }
       return (Class<?>) rawType;
-
-    } else if (type instanceof GenericArrayType) {
+    } else if (type instanceof GenericArrayType) { // eg List<String>[] List<? extend Integer> []
+      // 泛型数组，获取元素类型，递归调用获取类型
       Type componentType = ((GenericArrayType) type).getGenericComponentType();
-      return Array.newInstance(getRawType(componentType), 0).getClass();
-
+      Class<?> rawType = getRawType(componentType);
+      return Array.newInstance(rawType, 0).getClass();
     } else if (type instanceof TypeVariable) {
-      // We could use the variable's bounds, but that won't work if there are multiple. Having a raw
-      // type that's more general than necessary is okay.
       return Object.class;
-
-    } else if (type instanceof WildcardType) {
+    } else if (type instanceof WildcardType) { // List<? extend Integer>
+      // 通配符，获取到上界，递归调用
       return getRawType(((WildcardType) type).getUpperBounds()[0]);
-
     } else {
       String className = type == null ? "null" : type.getClass().getName();
       throw new IllegalArgumentException(

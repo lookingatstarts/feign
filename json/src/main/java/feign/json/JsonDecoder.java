@@ -66,6 +66,7 @@ public class JsonDecoder implements Decoder {
             format("%s is not a type supported by this decoder.", type),
             response.request());
     if (response.body() == null) return null;
+
     try (Reader reader = response.body().asReader(response.charset())) {
       Reader bodyReader = (reader.markSupported()) ? reader : new BufferedReader(reader);
       bodyReader.mark(1);

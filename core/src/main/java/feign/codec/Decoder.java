@@ -85,12 +85,18 @@ public interface Decoder {
    */
   Object decode(Response response, Type type) throws IOException, DecodeException, FeignException;
 
+  /**
+   * 支持byte[] String类型
+   */
   /** Default implementation of {@code Decoder}. */
   public class Default extends StringDecoder {
 
     @Override
     public Object decode(Response response, Type type) throws IOException {
-      if (response.status() == 404 || response.status() == 204) return Util.emptyValueOf(type);
+      // 404时：类型默认值
+      if (response.status() == 404 || response.status() == 204){
+        return Util.emptyValueOf(type);
+      }
       if (response.body() == null) return null;
       if (byte[].class.equals(type)) {
         return Util.toByteArray(response.body().asInputStream());

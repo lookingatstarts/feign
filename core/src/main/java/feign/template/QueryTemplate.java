@@ -194,6 +194,7 @@ public final class QueryTemplate {
       if (result == null) {
         continue;
       }
+      // 分隔,
       if (result.contains(",")) {
         expanded.addAll(Arrays.asList(result.split(",")));
       } else {
@@ -207,6 +208,7 @@ public final class QueryTemplate {
     if (this.pure) {
       return name;
     }
+    // name=value分隔符name=value2
     if (!values.isEmpty()) {
       return this.collectionFormat.join(name, values, StandardCharsets.UTF_8).toString();
     }

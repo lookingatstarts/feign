@@ -35,13 +35,18 @@ import java.util.*;
 
 /** An immutable response to an http invocation which only returns string content. */
 public final class Response implements Closeable {
-
+  // http响应码
   private final int status;
   private final String reason;
-  private final Map<String, Collection<String>> headers;
-  private final Body body;
-  private final Request request;
+  // 协议版本
   private final ProtocolVersion protocolVersion;
+  // 响应头
+  private final Map<String, Collection<String>> headers;
+  // 响应体
+  private final Body body;
+  // 请求
+  private final Request request;
+  private RequestTemplate requestTemplate;
 
   private Response(Builder builder) {
     checkState(builder.request != null, "original request is required");
@@ -75,6 +80,7 @@ public final class Response implements Closeable {
     Body body;
     Request request;
     private ProtocolVersion protocolVersion = DEFAULT_PROTOCOL_VERSION;
+    RequestTemplate requestTemplate;
 
     Builder() {}
 
@@ -271,10 +277,12 @@ public final class Response implements Closeable {
 
   /**
    * 响应体，需要关闭的资源
+   * 1、大小 2、是否可重复读 3、asInputStream 4、asReader 5、关闭资源
    */
   public interface Body extends Closeable {
 
     /**
+     * body的大小
      * length in bytes, if known. Null if unknown or greater than {@link Integer#MAX_VALUE}. <br>
      * <br>
      * <br>
@@ -285,8 +293,8 @@ public final class Response implements Closeable {
 
     /**
      * 如果为true,asInputStream asReader可以读取多次
-     */
-    /** True if {@link #asInputStream()} and {@link #asReader()} can be called more than once. */
+     * True if {@link #asInputStream()} and {@link #asReader()} can be called more than once.
+     * */
     boolean isRepeatable();
 
     /**

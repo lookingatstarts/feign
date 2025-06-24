@@ -81,16 +81,18 @@ public interface ErrorDecoder {
    *     application-specific exception decoded by the implementation. If the throwable is
    *     retryable, it should be wrapped, or a subtype of {@link RetryableException}
    */
-  public Exception decode(String methodKey, Response response);
+   Exception decode(String methodKey, Response response);
 
   /**
    * 默认errorDecoder
+   * 1、如果响应头中没有retry-after请求头，根据响应码返回XXXFeignException
+   * 2、返回RetryableException
    */
   public class Default implements ErrorDecoder {
 
     private final RetryAfterDecoder retryAfterDecoder = new RetryAfterDecoder();
-    private Integer maxBodyBytesLength;
-    private Integer maxBodyCharsLength;
+    private final Integer maxBodyBytesLength;
+    private final Integer maxBodyCharsLength;
 
     public Default() {
       this.maxBodyBytesLength = null;
@@ -108,6 +110,7 @@ public interface ErrorDecoder {
           errorStatus(methodKey, response, maxBodyBytesLength, maxBodyCharsLength);
       // 获取请求头的retry-after
       Long retryAfter = retryAfterDecoder.apply(firstOrNull(response.headers(), RETRY_AFTER));
+      // 抛出RetryableException
       if (retryAfter != null) {
         return new RetryableException(
             response.status(),
